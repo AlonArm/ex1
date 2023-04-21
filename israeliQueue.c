@@ -54,7 +54,7 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction* friendFunctions, ComparisonF
   return queue;
 }
 
-IsraeliQueue IsraeliQueueClone(IsraeliQueue q) //mine!!
+IsraeliQueue IsraeliQueueClone(IsraeliQueue q) 
 {
   if(q==NULL) //check for nullity if so then return null
   {
@@ -64,7 +64,7 @@ IsraeliQueue IsraeliQueueClone(IsraeliQueue q) //mine!!
   clone->rivalry_th=q->rivalry_th;
   clone->friendship_th=q->friendship_th;
   clone->compare=q->compare;
-  //need to add the pointer to the person and the persons info
+  clone->head= copyPerson(q->head);
   clone->funcList=copyFunc(q->funcList);
    return clone;
 }
