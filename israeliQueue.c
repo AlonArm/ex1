@@ -5,16 +5,18 @@
 typedef struct person * personPtr; //for cleaner code
 typedef struct funcNode* funcNodePtr;//for cleaner code
 //creating the nodes of people in our list with the relevant values
-typedef struct person {
+typedef struct person 
+{
   int friendsPassed;
   int enemyHeldBack;
 struct person* next;
 };
 
-struct funcNode{
+struct funcNode
+{
   FriendshipFunction func;
   struct funcNode *next;
-};
+}FuncNode;
 
 struct IsraeliQueue_t
 {
@@ -23,47 +25,52 @@ struct IsraeliQueue_t
   ComparisonFunction compare;
   int friendship_th;
   int rivalry_th;
+}IsraeliQueue_t;
 
-};
 IsraeliQueue IsraeliQueueCreate(FriendshipFunction* friendFunctions, ComparisonFunction compFunction, int friendThres, int rivalTres){
-  IsraeliQueue queue = (IsraeliQueue)malloc(sizeof(IsraeliQueue));
+  IsraeliQueue queue = (IsraeliQueue)malloc(sizeof(IsraeliQueue_t)); //i think the size allocation here needs to be that of the struct itslef
   //queue->friendshipFunctions = friendFunctions;
   queue->compare = compFunction;
   queue->friendship_th = friendThres;
   queue->rivalry_th = rivalTres;
   if(friendFunctions[0] != NULL)
   {
-    queue->funcList = (funcNodePtr)(malloc(sizeof(struct funcNode)));
+    queue->funcList = (funcNodePtr)(malloc(sizeof(FuncNode)));
     queue->funcList->func = friendFunctions[0];
     funcNodePtr temp = queue->funcList;
     for(int i = 1 ; friendFunctions[i] != NULL ; i++)
     {
-      temp->next = (funcNodePtr)(malloc(sizeof(struct funcNode)));
+      temp->next = (funcNodePtr)(malloc(sizeof(FuncNode)));
       temp->next->func = friendFunctions[i];
       temp = temp->next;
     }
   }
   return queue;
 }
-IsraeliQueue IsraeliQueueClone(IsraeliQueue q); //mine!!
+
+IsraeliQueue IsraeliQueueClone(IsraeliQueue q) //mine!!
 {
-  if(q==null) //check for nullity
+  if(q==NULL) //check for nullity
   {
-    return null;
+    return NULL;
   }
-IsraeliQueue clone = (IsraeliQueue)malloc(sizeof(IsraeliQueue)); ;
+IsraeliQueue clone = (IsraeliQueue)malloc(sizeof(IsraeliQueue_t)); ;
 clone->rivalry_th=q->rivalry_th;
 clone->friendship_th=q->friendship_th;
+clone->compare=q->compare;
+//need to add the pointer to the person
+while(q->funcList->func!=NULL)
+{
 
-    //void (*newFunc)(int) = (void (*)(int)) malloc(sizeof(myFuncCopy)); example of creating  new func
 
-if(){}//check if head is not null for q the loop to see what the result is
+}
 
-ComparisonFunction cloneCompare 
+
 //need to deal with friendship function see that it is not trivial because you need to create a new one
 return clone;
 
 }
+
 void IsraeliQueueDestroy(IsraeliQueue queue){
   personPtr p = queue->head;
   while(p != NULL)
@@ -96,6 +103,5 @@ IsraeliQueueError IsraeliQueueUpdateRivalryThreshold(IsraeliQueue queue, int thr
     }
     return ISRAELI_QUEUE_ERROR;
 }
-
 
 
