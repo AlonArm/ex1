@@ -110,6 +110,7 @@ void IsraeliQueueDestroy(IsraeliQueue queue){
     f = f->next;
     free(temp);
   }
+  free(queue);
 }
 
 IsraeliQueueError IsraeliQueueUpdateFriendshipThreshold(IsraeliQueue queue, int threshold){
@@ -132,14 +133,16 @@ IsraeliQueueError IsraeliQueueUpdateRivalryThreshold(IsraeliQueue queue, int thr
 
 IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need to figure out together the return types
 {
+ personPtr newPerson = (personPtr) person;
+       if(newPerson==NULL)
+       {
+         return ISRAELIQUEUE_ALLOC_FAILED;
+       }
 
     if(queue==NULL||person==NULL)
     {
       return ISRAELIQUEUE_BAD_PARAM;
     }
-
-  
-       personPtr newPerson = (personPtr) person;
        funcNodePtr tempFunc = queue->funcList;
        personPtr tmpPerson = queue->head;
        personPtr friend = NULL;
@@ -261,4 +264,34 @@ void* IsraeliQueueDequeue(IsraeliQueue queue)
   queue->head=queue->head->next;
   free(temp);
   return queue->head;
+}
+
+IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue queue, FriendshipFunction newFunc)// need to add checks that the function works correctly
+{
+  funcNodePtr newPointer = (funcNodePtr)(malloc(sizeof(FuncNode)));
+    if(newPointer==NULL)
+    {
+      return ISRAELIQUEUE_ALLOC_FAILED;
+    }
+
+  if(queue==NULL||newFunc==NULL)
+  {
+    return ISRAELIQUEUE_BAD_PARAM;
+  }
+  
+  funcNodePtr temp = queue->funcList;
+  while(temp->next != NULL)
+  {
+    temp = temp->next;
+  }
+  
+    newPointer->func = newFunc;
+    temp->next = newPointer;
+    newPointer->next = NULL;
+
+    if(temp->next==newPointer)
+    {
+      return ISRAELIQUEUE_SUCCESS;
+    }
+    return ISRAELI_QUEUE_ERROR;
 }
