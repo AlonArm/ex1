@@ -130,7 +130,7 @@ IsraeliQueueError IsraeliQueueUpdateRivalryThreshold(IsraeliQueue queue, int thr
     return ISRAELI_QUEUE_ERROR;
 }
 
-IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //continue working on
+IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need to figure out together the return types
 {
 
     if(queue==NULL||person==NULL)
@@ -227,4 +227,38 @@ int FuncListSize(IsraeliQueue queue)//void function to get back size of list
     temp=temp->next;
   }
   return num;
+}
+
+bool IsraeliQueueContains(IsraeliQueue queue, void * person)
+{
+  if(person==NULL||queue==NULL)
+  {
+    return false;
+  }
+  
+   personPtr newPerson = (personPtr) person;
+   personPtr temp = queue->head;
+   
+   while(temp!=NULL)
+   {
+     if(temp==person)
+     {
+       return true;
+     }
+     temp=temp->next;
+
+   }
+   return false;
+}
+
+void* IsraeliQueueDequeue(IsraeliQueue queue)
+{
+  if(queue->head==NULL)
+  {
+    return NULL;
+  }
+  personPtr temp = queue->head;
+  queue->head=queue->head->next;
+  free(temp);
+  return queue->head;
 }
