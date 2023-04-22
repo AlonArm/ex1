@@ -14,7 +14,8 @@ struct person *next;
 }person;
 
 funcNodePtr copyFunc(funcNodePtr); //this function appears later in the code and was added by me to make the code cleaner
-personPtr copyPersonList(personPtr head); //this helper function will create a copy of every person inside the function that coies everything
+personPtr copyPersonQueue(personPtr head); //this helper function will create a copy of every person inside the function that coies everything
+int FuncListSize(IsraeliQueue queue);
 
 struct funcNode
 {
@@ -64,7 +65,7 @@ IsraeliQueue IsraeliQueueClone(IsraeliQueue q)
   clone->rivalry_th=q->rivalry_th;
   clone->friendship_th=q->friendship_th;
   clone->compare=q->compare;
-  clone->head= copyPerson(q->head);
+  clone->head= copyPersonQueue(q->head);
   clone->funcList=copyFunc(q->funcList);
    return clone;
 }
@@ -80,7 +81,8 @@ funcNodePtr copyFunc(funcNodePtr head) //helper function for cloning linked list
      newNode->next = copyFunc(head->next);
      return newNode;
 }
-personPtr copyPerson(personPtr head) //helper function for cloning queue of person data
+
+personPtr copyPersonQueue(personPtr head) //helper function for cloning queue of person data
 { //this is an addition to the api
   if(head==NULL)
   {
@@ -89,10 +91,9 @@ personPtr copyPerson(personPtr head) //helper function for cloning queue of pers
      personPtr person= (personPtr)malloc(sizeof(person));
      person->enemyHeldBack = head->enemyHeldBack;
       person->friendsPassed= head->friendsPassed;
-    person->next=copyPerson(head->next);
+    person->next=copyPersonQueue(head->next);
      return person;
 }
-
 
 void IsraeliQueueDestroy(IsraeliQueue queue){
   personPtr p = queue->head;
@@ -110,6 +111,7 @@ void IsraeliQueueDestroy(IsraeliQueue queue){
     free(temp);
   }
 }
+
 IsraeliQueueError IsraeliQueueUpdateFriendshipThreshold(IsraeliQueue queue, int threshold){
     queue->friendship_th = threshold;
     if(queue->friendship_th == threshold) 
@@ -118,6 +120,7 @@ IsraeliQueueError IsraeliQueueUpdateFriendshipThreshold(IsraeliQueue queue, int 
     }
     return ISRAELI_QUEUE_ERROR;
 }
+
 IsraeliQueueError IsraeliQueueUpdateRivalryThreshold(IsraeliQueue queue, int threshold){
     queue->rivalry_th = threshold;
     if(queue->rivalry_th == threshold)
@@ -127,4 +130,101 @@ IsraeliQueueError IsraeliQueueUpdateRivalryThreshold(IsraeliQueue queue, int thr
     return ISRAELI_QUEUE_ERROR;
 }
 
+IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //continue working on
+{
 
+    if(queue==NULL||person==NULL)
+    {
+      return ISRAELIQUEUE_BAD_PARAM;
+    }
+
+  
+       personPtr newPerson = (personPtr) person;
+       funcNodePtr tempFunc = queue->funcList;
+       personPtr tmpPerson = queue->head;
+       personPtr friend = NULL;
+       personPtr helperPointer=NULL;
+       double average = 0;
+       int sizeOfFuncList = FuncListSize(queue);
+       bool flag = true;
+
+       while(tmpPerson->next!=NULL)
+      {
+
+        if(friend==NULL) //if there is no current friend check if current node is friend that i can pass
+        {
+        while(tempFunc!=NULL&&flag)
+        {
+          if(tempFunc->func(newPerson,tmpPerson)>queue->friendship_th&&tmpPerson->friendsPassed<5)
+          {
+            friend = tmpPerson;
+            flag=false;
+          }
+          tempFunc= tempFunc->next;
+        }
+        }
+            else //check if there is an enemy behind
+            {
+            while(tempFunc!=NULL&&flag)
+            {
+              if(tempFunc->func(newPerson,tmpPerson)>queue->friendship_th)
+              {
+                flag=false;
+              }
+              average = (tempFunc->func(tmpPerson,newPerson)/(double)sizeOfFuncList);
+
+            }
+            if(flag&&average<queue->rivalry_th&&tmpPerson->enemyHeldBack<3)
+            {
+                tmpPerson->enemyHeldBack++;
+                friend=NULL;
+            }
+             }
+
+           tempFunc =queue->funcList;
+           tmpPerson= tmpPerson->next;
+           flag=true;
+           average=0;
+
+        }
+
+            if(friend!=NULL)
+            {
+              helperPointer=friend->next;
+              friend->next = newPerson;
+              newPerson->next=helperPointer;
+            }
+            else
+            {
+              tmpPerson->next=newPerson;
+              newPerson->next=NULL;
+            }
+      
+return ISRAELIQUEUE_SUCCESS;
+
+}
+
+int IsraeliQueueSize(IsraeliQueue queue)
+{
+  int num =0;
+  personPtr temp = queue->head;
+
+  while(temp!=NULL)
+  {
+    num++;
+    temp=temp->next;
+  }
+  return num;
+}
+int FuncListSize(IsraeliQueue queue)//void function to get back size of list
+{
+  int num =0;
+  funcNodePtr temp = queue->funcList;
+
+  while(temp!=NULL)
+  {
+    num++;
+    temp=temp->next;
+  }
+  return num;
+}
