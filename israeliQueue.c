@@ -1,27 +1,30 @@
 #include <stdio.h>      
 #include <stdlib.h>     
+#include <math.h>
 #include "IsraeliQueue.h"
 
 
-typedef struct person *personPtr; //for cleaner code
-typedef struct funcNode *funcNodePtr;//for cleaner code
+typedef struct personQueue* personPtr; //for cleaner code
+typedef struct funcNode* funcNodePtr;//for cleaner code
 
-typedef struct person 
+typedef struct personQueue 
 {
   int friendsPassed;
   int enemyHeldBack;
-struct person *next;
-}person;
+  void* person;
+  struct personQueue *next;
+}personQueue;
 
 funcNodePtr copyFunc(funcNodePtr); //this function appears later in the code and was added by me to make the code cleaner
 personPtr copyPersonQueue(personPtr head); //this helper function will create a copy of every person inside the function that coies everything
-int FuncListSize(IsraeliQueue queue);
+int FuncListSize(funcNodePtr);
+int compare(IsraeliQueue, void*, void*);
 
 struct funcNode
 {
   FriendshipFunction func;
   struct funcNode *next;
-}FuncNode;
+}funcNode;
 
 struct IsraeliQueue_t
 {
@@ -42,12 +45,12 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction* friendFunctions, ComparisonF
   queue->head=NULL; //so that there are no errors
   if(friendFunctions[0] != NULL)
   {
-    queue->funcList = (funcNodePtr)(malloc(sizeof(FuncNode)));
+    queue->funcList = (funcNodePtr)(malloc(sizeof(funcNodePtr)));
     queue->funcList->func = friendFunctions[0];
     funcNodePtr temp = queue->funcList;
     for(int i = 1 ; friendFunctions[i] != NULL ; i++)
     {
-      temp->next = (funcNodePtr)(malloc(sizeof(FuncNode)));
+      temp->next = (funcNodePtr)(malloc(sizeof(funcNodePtr)));
       temp->next->func = friendFunctions[i];
       temp = temp->next;
     }
@@ -76,7 +79,7 @@ funcNodePtr copyFunc(funcNodePtr head) //helper function for cloning linked list
   {
     return NULL;
   }
-     funcNodePtr newNode= (funcNodePtr)malloc(sizeof(FuncNode));
+     funcNodePtr newNode= (funcNodePtr)malloc(sizeof(funcNodePtr));
      newNode->func = head->func;
      newNode->next = copyFunc(head->next);
      return newNode;
@@ -88,11 +91,12 @@ personPtr copyPersonQueue(personPtr head) //helper function for cloning queue of
   {
     return NULL;
   }
-     personPtr person= (personPtr)malloc(sizeof(person));
-     person->enemyHeldBack = head->enemyHeldBack;
-      person->friendsPassed= head->friendsPassed;
+    personPtr person= (personPtr)malloc(sizeof(person));
+    person->enemyHeldBack = head->enemyHeldBack;
+    person->friendsPassed= head->friendsPassed;
+    person->person = head->person;
     person->next=copyPersonQueue(head->next);
-     return person;
+    return person;
 }
 
 void IsraeliQueueDestroy(IsraeliQueue queue){
@@ -101,15 +105,10 @@ void IsraeliQueueDestroy(IsraeliQueue queue){
   {
     personPtr temp = p;
     p = p->next;
+    free(temp->person);
     free(temp);
   }
-  funcNodePtr f = queue->funcList;
-  while(f != NULL)
-  {
-    funcNodePtr temp = f;
-    f = f->next;
-    free(temp);
-  }
+  destroyFuncList(queue->funcList);
   free(queue);
 }
 
@@ -133,78 +132,62 @@ IsraeliQueueError IsraeliQueueUpdateRivalryThreshold(IsraeliQueue queue, int thr
 
 IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need to figure out together the return types
 {
- personPtr newPerson = (personPtr) person;
-       if(newPerson==NULL)
-       {
-         return ISRAELIQUEUE_ALLOC_FAILED;
-       }
+  if(queue==NULL||person==NULL){
+    return ISRAELIQUEUE_BAD_PARAM;
+  }
+  personPtr newPerson = (personPtr)malloc(sizeof(personPtr));
+  newPerson->person = person;
+  newPerson->enemyHeldBack = 0;
+  newPerson->friendsPassed = 0;
+  if(!newPerson){
+    return ISRAELIQUEUE_ALLOC_FAILED;
+  }
+  personPtr tmpPerson = queue->head;
+  personPtr friend = NULL;
 
-    if(queue==NULL||person==NULL)
+  while(tmpPerson->next!=NULL){
+    if(friend==NULL) //if there is no current friend check if current node is friend that i can pass
     {
-      return ISRAELIQUEUE_BAD_PARAM;
+      if(tmpPerson->friendsPassed < FRIEND_QUOTA && compare(queue, tmpPerson->person, person) == 1){
+        friend = tmpPerson;
+      }
     }
-       funcNodePtr tempFunc = queue->funcList;
-       personPtr tmpPerson = queue->head;
-       personPtr friend = NULL;
-       personPtr helperPointer=NULL;
-       double average = 0;
-       int sizeOfFuncList = FuncListSize(queue);
-       bool flag = true;
-
-       while(tmpPerson->next!=NULL)
-      {
-
-        if(friend==NULL) //if there is no current friend check if current node is friend that i can pass
-        {
-        while(tempFunc!=NULL&&flag)
-        {
-          if(tempFunc->func(newPerson,tmpPerson)>queue->friendship_th&&tmpPerson->friendsPassed<5)
-          {
-            friend = tmpPerson;
-            flag=false;
-          }
-          tempFunc= tempFunc->next;
-        }
-        }
-            else //check if there is an enemy behind
-            {
-            while(tempFunc!=NULL&&flag)
-            {
-              if(tempFunc->func(newPerson,tmpPerson)>queue->friendship_th)
-              {
-                flag=false;
-              }
-              average = (tempFunc->func(tmpPerson,newPerson)/(double)sizeOfFuncList);
-
-            }
-            if(flag&&average<queue->rivalry_th&&tmpPerson->enemyHeldBack<3)
-            {
-                tmpPerson->enemyHeldBack++;
-                friend=NULL;
-            }
-             }
-
-           tempFunc =queue->funcList;
-           tmpPerson= tmpPerson->next;
-           flag=true;
-           average=0;
-
-        }
-
-            if(friend!=NULL)
-            {
-              helperPointer=friend->next;
-              friend->next = newPerson;
-              newPerson->next=helperPointer;
-            }
-            else
-            {
-              tmpPerson->next=newPerson;
-              newPerson->next=NULL;
-            }
-      
+    else //check if there is an enemy behind
+    {
+      if(tmpPerson->enemyHeldBack < RIVAL_QUOTA && compare(queue, tmpPerson->person, person) == -1){
+        friend = NULL;
+        tmpPerson->enemyHeldBack++;
+      }
+    }
+    tmpPerson= tmpPerson->next;
+  }
+  if(friend == NULL){
+    newPerson->next = NULL;
+    tmpPerson->next = newPerson;
+  }
+  else{
+    newPerson->next = tmpPerson->next;
+    tmpPerson->next = newPerson;
+    tmpPerson->friendsPassed++;
+  }
 return ISRAELIQUEUE_SUCCESS;
-
+}
+//receives two objects in the queue and checks if they are friends or enemies
+//returns -1 if they are enemies, 1 if they are friends, 0 if neither
+int compare(IsraeliQueue queue, void* person1, void* person2){
+  if(queue->funcList == NULL || person1 == NULL || person2 == NULL){
+    return 0;
+  }
+  funcNodePtr temp = queue->funcList;
+  int fCounter = 0;
+  while(temp != NULL){
+    int fLevel = (*(temp->func))(person1, person2);
+    if(fLevel > queue->friendship_th) return 1;
+    fCounter += fLevel;
+    temp = temp->next;
+  }
+  if(fCounter < queue->rivalry_th * FuncListSize(queue->funcList)) return -1;
+  return 0;
 }
 
 int IsraeliQueueSize(IsraeliQueue queue)
@@ -219,10 +202,10 @@ int IsraeliQueueSize(IsraeliQueue queue)
   }
   return num;
 }
-int FuncListSize(IsraeliQueue queue)//void function to get back size of list
+int FuncListSize(funcNodePtr funcList)//void function to get back size of list
 {
   int num =0;
-  funcNodePtr temp = queue->funcList;
+  funcNodePtr temp = funcList;
 
   while(temp!=NULL)
   {
@@ -234,41 +217,34 @@ int FuncListSize(IsraeliQueue queue)//void function to get back size of list
 
 bool IsraeliQueueContains(IsraeliQueue queue, void * person)
 {
-  if(person==NULL||queue==NULL)
-  {
+  if(person==NULL||queue==NULL){
     return false;
   }
   
-   personPtr newPerson = (personPtr) person;
-   personPtr temp = queue->head;
+  personPtr temp = queue->head;
    
-   while(temp!=NULL)
-   {
-     if(temp==person)
-     {
-       return true;
-     }
-     temp=temp->next;
-
-   }
-   return false;
+  while(temp!=NULL){
+    if(temp->person==person){
+      return true;
+    }
+    temp=temp->next;
+  }
+  return false;
 }
 
 void* IsraeliQueueDequeue(IsraeliQueue queue)
 {
-  if(queue->head==NULL)
-  {
+  if(queue == NULL || queue->head==NULL){
     return NULL;
   }
-  personPtr temp = queue->head;
+  personPtr first = queue->head;
   queue->head=queue->head->next;
-  free(temp);
-  return queue->head;
+  return first;
 }
 
 IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue queue, FriendshipFunction newFunc)// need to add checks that the function works correctly
 {
-  funcNodePtr newPointer = (funcNodePtr)(malloc(sizeof(FuncNode)));
+  funcNodePtr newPointer = (funcNodePtr)(malloc(sizeof(funcNodePtr)));
     if(newPointer==NULL)
     {
       return ISRAELIQUEUE_ALLOC_FAILED;
@@ -294,4 +270,53 @@ IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue queue, Friendshi
       return ISRAELIQUEUE_SUCCESS;
     }
     return ISRAELI_QUEUE_ERROR;
+}
+
+IsraeliQueue IsraeliQueueMerge(IsraeliQueue* qarr,ComparisonFunction func){
+  if(qarr == NULL || qarr[0] == NULL || func == NULL) return NULL;
+  int newFThreshold = 0;
+  int newRThreshold = 1;
+  int qarr_size = 0;
+  funcNodePtr newFuncList = NULL;
+  for(int i = 0 ; qarr[i] != NULL ; i++){
+    qarr_size++;
+    newFThreshold += qarr[i]->friendship_th;
+    newRThreshold *= qarr[i]->rivalry_th;
+    funcNodePtr temp = qarr[i]->funcList;
+    while(temp != NULL){
+      funcNodePtr addedFunc = (funcNodePtr)malloc(sizeof(funcNodePtr));
+      addedFunc->func = temp->func;
+      addedFunc->next = newFuncList;
+      newFuncList = addedFunc;
+      temp = temp->next;
+    }
+  }
+  IsraeliQueue newQueue = (IsraeliQueue)malloc(sizeof(IsraeliQueue));
+  if(newQueue == NULL){
+    destroyFuncList(newFuncList);
+    return NULL;
+  }
+  newQueue->compare = func;
+  newQueue->friendship_th = newFThreshold / qarr_size;
+  newQueue->rivalry_th = (int)(ceil(pow(newRThreshold, 1.0/qarr_size)));
+  newQueue->funcList = newFuncList;
+  newQueue->head = NULL;
+  bool allEmpty = false;
+  while(!allEmpty){
+    allEmpty = true;
+    for(int i = 0 ; qarr[i] != NULL ; i++){
+      if(IsraeliQueueSize(qarr[i]) > 0){
+        allEmpty = false;
+        void* person = IsraeliQueueDequeue(qarr[i]);
+        IsraeliQueueEnqueue(newQueue, person);
+      }
+    }
+  }
+  return newQueue;
+}
+void destroyFuncList(funcNodePtr funcList){
+  if(funcList->next != NULL){
+    destroyFuncList(funcList->next);
+  }
+  free(funcList);
 }
