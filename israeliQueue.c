@@ -12,7 +12,7 @@ typedef struct personQueue
   int friendsPassed;
   int enemyHeldBack;
   void* person;
-  struct personQueue *next;
+  struct personQueue *next, *previous;
 }personQueue;
 
 funcNodePtr copyFunc(funcNodePtr); //this function appears later in the code and was added by me to make the code cleaner
@@ -28,7 +28,7 @@ struct funcNode
 
 struct IsraeliQueue_t
 {
-  personPtr head;
+  personPtr head, tail;
   funcNodePtr funcList;
   ComparisonFunction compare;
   int friendship_th;
@@ -43,14 +43,15 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction* friendFunctions, ComparisonF
   queue->friendship_th = friendThres;
   queue->rivalry_th = rivalTres;
   queue->head=NULL; //so that there are no errors
+  queue->tail = NULL;
   if(friendFunctions[0] != NULL)
   {
-    queue->funcList = (funcNodePtr)(malloc(sizeof(funcNodePtr)));
+    queue->funcList = (funcNodePtr)(malloc(sizeof(struct funcNode)));
     queue->funcList->func = friendFunctions[0];
     funcNodePtr temp = queue->funcList;
     for(int i = 1 ; friendFunctions[i] != NULL ; i++)
     {
-      temp->next = (funcNodePtr)(malloc(sizeof(funcNodePtr)));
+      temp->next = (funcNodePtr)(malloc(sizeof(struct funcNode)));
       temp->next->func = friendFunctions[i];
       temp = temp->next;
     }
@@ -79,7 +80,7 @@ funcNodePtr copyFunc(funcNodePtr head) //helper function for cloning linked list
   {
     return NULL;
   }
-     funcNodePtr newNode= (funcNodePtr)malloc(sizeof(funcNodePtr));
+     funcNodePtr newNode= (funcNodePtr)malloc(sizeof(struct funcNode));
      newNode->func = head->func;
      newNode->next = copyFunc(head->next);
      return newNode;
@@ -91,11 +92,14 @@ personPtr copyPersonQueue(personPtr head) //helper function for cloning queue of
   {
     return NULL;
   }
-    personPtr person= (personPtr)malloc(sizeof(person));
+    personPtr person= (personPtr)malloc(sizeof(struct personQueue));
     person->enemyHeldBack = head->enemyHeldBack;
     person->friendsPassed= head->friendsPassed;
     person->person = head->person;
     person->next=copyPersonQueue(head->next);
+    if(person->next != NULL){
+      person->next->previous = person;
+    }
     return person;
 }
 
@@ -135,7 +139,7 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need 
   if(queue==NULL||person==NULL){
     return ISRAELIQUEUE_BAD_PARAM;
   }
-  personPtr newPerson = (personPtr)malloc(sizeof(personPtr));
+  personPtr newPerson = (personPtr)malloc(sizeof(struct personQueue));
   newPerson->person = person;
   newPerson->enemyHeldBack = 0;
   newPerson->friendsPassed = 0;
@@ -161,9 +165,11 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need 
     }
     tmpPerson= tmpPerson->next;
   }
+  newPerson->previous = tmpPerson;
   if(friend == NULL){
     newPerson->next = NULL;
     tmpPerson->next = newPerson;
+    queue->tail = newPerson;
   }
   else{
     newPerson->next = tmpPerson->next;
@@ -239,12 +245,17 @@ void* IsraeliQueueDequeue(IsraeliQueue queue)
   }
   personPtr first = queue->head;
   queue->head=queue->head->next;
+  if(queue->head == NULL){
+    queue->tail = NULL;
+  }else{
+  queue->head->previous = NULL;
+  }
   return first;
 }
 
 IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue queue, FriendshipFunction newFunc)// need to add checks that the function works correctly
 {
-  funcNodePtr newPointer = (funcNodePtr)(malloc(sizeof(funcNodePtr)));
+  funcNodePtr newPointer = (funcNodePtr)(malloc(sizeof(struct funcNode)));
     if(newPointer==NULL)
     {
       return ISRAELIQUEUE_ALLOC_FAILED;
@@ -272,6 +283,10 @@ IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue queue, Friendshi
     return ISRAELI_QUEUE_ERROR;
 }
 
+IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue){
+  
+}
+
 IsraeliQueue IsraeliQueueMerge(IsraeliQueue* qarr,ComparisonFunction func){
   if(qarr == NULL || qarr[0] == NULL || func == NULL) return NULL;
   int newFThreshold = 0;
@@ -284,14 +299,14 @@ IsraeliQueue IsraeliQueueMerge(IsraeliQueue* qarr,ComparisonFunction func){
     newRThreshold *= qarr[i]->rivalry_th;
     funcNodePtr temp = qarr[i]->funcList;
     while(temp != NULL){
-      funcNodePtr addedFunc = (funcNodePtr)malloc(sizeof(funcNodePtr));
+      funcNodePtr addedFunc = (funcNodePtr)malloc(sizeof(struct funcNode));
       addedFunc->func = temp->func;
       addedFunc->next = newFuncList;
       newFuncList = addedFunc;
       temp = temp->next;
     }
   }
-  IsraeliQueue newQueue = (IsraeliQueue)malloc(sizeof(IsraeliQueue));
+  IsraeliQueue newQueue = (IsraeliQueue)malloc(sizeof(struct IsraeliQueue_t));
   if(newQueue == NULL){
     destroyFuncList(newFuncList);
     return NULL;
