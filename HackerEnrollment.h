@@ -70,7 +70,8 @@ typedef struct
 }EnrollmentSystem_t;
 
 /**
-*this functions return the value of freindships based on different parameters
+*OVERVIEW ON THE FUNCTIONS BELOW- 
+*this functions return the value of freindships based on different parameters and need to be inside funclist
 *1.friendshipValueByHackerFile - returns 20 if a hacker is friends with a student based on the file
 *it returns -20 if they are enemys and 0 if they're neither
 *2. friendshipValueByASCII returns the absolute value of the diffrence between both names of the
@@ -82,25 +83,43 @@ int friendshipValueByASCII(char* hackerName,char* studentName);
 int friendshipValueById(char hackerId[ID_LENGTH],char studentId[ID_LENGTH]); 
 
 /**
-* Creates a new EnrollmentSystem object with the provided students file functions, courses file, hacker file
-*returns a struct containing an array of students pointers, an array of hackers pointers,
-* and an array of the courses pointer and doesnt update the courses queue
- *in case of failure return a pointer to an enrollment system that all its paramters point to NULL */
+ * OVERVIEW ON THE createEnrollment BELOW-
+ * Creates a new EnrollmentSystem object with the provided students file functions, courses file, hacker file
+ * returns a struct containing an array of students pointers, an array of hackers pointers,
+ * and an array of the courses pointer and doesnt update the courses queue
+ * in case of failure return a pointer to an enrollment system that all its paramters point to NULL.
+ * 
+ * PARAMETERS PASSED FORMAT-
+ * 1.FILE* students: <Student ID> <Total Credits> <GPA> <Name> <Surname> <City> <Department>\n
+ * 2.FILE* courses: <Course Number> <Size>\n
+ * 3.FILE* hackers: <Student ID> \n<Course Numbers>*\n //Desired courses<Student ID>*\n //Friends<Student ID>*\n //Rivals
+ */
+
 EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers);
 
 /**
+ * OVERVIEW ON readEnrollment BELOW-
  * enters into system the courses queues from a provided file of queues that cosists of the students
- * ids, and the course number, returns a pointer to the emrollmentsystem that has changed
+ * ids, and the course number, returns a pointer to the emrollmentsystem that has changed.
+ * 
+ * PARAMETERS PASSED FORMAT-
+ * 1.EnrollmentSystem sys: pointer to the system itself
+ * 2.FILE* queues: <Course Number> <Student IDs>*
 */
 EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues);
 
 /**
+ * OVERVIEW ON hackEnrollment BELOW-
  * iterates through every hacker insisde the enrollment system and 
  * enters him to the place in the queue that he can enter based on the freindship functions above.
  * the iteration is in order of the hacker file. then it 
  * prints out for every hacker that didnt get in at least two of the courses that he wanted-
- *  "Cannot satisfy constraints for <Student ID>+"" into the out file
+ *  "Cannot satisfy constraints for <Student ID>+" into the out file
  * see that hackers maybe enemies of other hackers, or even friends
+ * 
+ * PARAMETERS PASSED FORMAT-
+ * 1. EnrollmentSystem sys: pointer to the system itself
+ * 2. FILE* out: file that consists of "Cannot satisfy constraints for <Student ID>+" 
  */
 void hackEnrollment(EnrollmentSystem sys, FILE* out);
 #endif
