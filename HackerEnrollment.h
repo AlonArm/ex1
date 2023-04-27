@@ -2,12 +2,14 @@
  #include "IsraeliQueue.h" //need to change to the place where this is actually at when finsihed
 #endif
 
+#include <stdio.h>
 
 
 #ifndef HACKER_ENROLLMENT_H_
 #define HACKER_ENROLLMENT_H_
 
-#define ID_LENGTH 9
+#define BUFFER_LENGTH 256
+#define ID_LENGTH 10
 #define FRIENDSHIP_TH 20 //the friendship threshold as defined in the question
 #define ENEMY_TH -10 //the enemy threshold as defined in the question
 
