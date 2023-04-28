@@ -6,10 +6,11 @@ int linesInFile(FILE *f);
 void freeArr(void** arr,int currIndex); //this function is supposed to help in not writing mundane code
 studentPtr* studentEnrollment(FILE* students,int linesInStudentFile); //helper function to keep the code more organized
 coursePtr* courseEnrollment(FILE* courses,int linesIncoursesFile); //helper function to keep the code more organized
-hackerPtr* hackerEnrollment(FILE* hackers,int linesInhackersFile); //helper function to keep the code more organized
-
+hackerPtr* hackerEnrollment(FILE* hackers,int linesInhackersFile,int numOfStudents,int numOfCourses); //helper function to keep the code more organized
+bool personalizedFgetc(char* param, FILE* inputFile); //creates a string, returns true if allocation succeded, false otherwise
 
 EnrollmentSystem createEnrollment(FILE *students, FILE* courses, FILE* hackers)
+ //need to free each struct individually in case one is broken
 {
     int linesInStudentFile = linesInFile(students);
     int linesIncourseFile = linesInFile(courses);
@@ -22,22 +23,23 @@ EnrollmentSystem createEnrollment(FILE *students, FILE* courses, FILE* hackers)
     EnrollmentSystem system = malloc(sizeof(EnrollmentSystem_t));
     system->studentArr = studentEnrollment(students,linesInStudentFile);
     system->courseArr = courseEnrollment(courses,linesIncourseFile);
-    system->hackerArr = hackerEnrollment(hackers,linesInHackerFile);
+    system->hackerArr = hackerEnrollment(hackers,linesInHackerFile,linesInStudentFile,linesInHackerFile); // need to fix
 
     if( system->studentArr==NULL||system->courseArr==NULL||system->hackerArr==NULL)
     {
+        //need to free each one individually
+        free(system);
     return NULL;
     }
     return system;
 
 }
 
-studentPtr* studentEnrollment(FILE* students,int linesInStudentFile) //need to check that lines is greater than 1
+studentPtr* studentEnrollment(FILE* students,int linesInStudentFile) 
 {
-    FILE* tmpFile = students;
      studentPtr* studentArr = malloc(linesInStudentFile * sizeof(studentPtr));
      if(studentArr==NULL)
-     {
+     {  
          return NULL;
      }
      for(int i=0;i<linesInStudentFile;i++)
@@ -46,21 +48,36 @@ studentPtr* studentEnrollment(FILE* students,int linesInStudentFile) //need to c
             if(studentArr[i]==NULL) //checking if the malloc succeded
             { 
                freeArr((void**)studentArr,i); //if one of the mallocs fail i want to return a null pointer
+               rewind(students);
                 return NULL;
             }
-             if(fscanf(tmpFile, "%9d %d %3lf %s %s %s %[^\n]", &studentArr[i]->id, &studentArr[i]->totalCredits, 
-             &studentArr[i]->gpa, studentArr[i]->name, studentArr[i]->surName, studentArr[i]->city, studentArr[i]->department)!=7||
-             studentArr[i]->id<0||studentArr[i]->totalCredits<0||studentArr[i]->gpa<0)
-             {
-                freeArr((void**)studentArr,i);
-                 return NULL;
-             }
+             fscanf(students, "%d %d %lf", &studentArr[i]->id, &studentArr[i]->totalCredits, 
+             &studentArr[i]->gpa);
+
+             if(personalizedFgetc(studentArr[i]->name)==false)
+            {
+                //som kind of freeing of the data
+            }
+            if(personalizedFgetc(studentArr[i]->surName)==false)
+            {
+                //som kind of freeing of the data
+            }
+            if(personalizedFgetc(studentArr[i]->city)==false)
+            {
+                //som kind of freeing of the data
+            }
+            if(personalizedFgetc(studentArr[i]->department)==false)
+            {
+                //som kind of freeing of the data
+            }
+        
         }
+        rewind(students);
         return studentArr;
 }
 coursePtr* courseEnrollment(FILE* courses,int linesInCourseFile)
 {
-    FILE* tmpFile = courses;
+
     coursePtr* courseArr = malloc(linesInCourseFile*sizeof(coursePtr));
     if(courseArr==NULL)
     {
@@ -72,23 +89,19 @@ coursePtr* courseEnrollment(FILE* courses,int linesInCourseFile)
          if(courseArr[i]==NULL) //checking if the malloc succeded
             { 
                freeArr((void**)courseArr,i); //if one of the mallocs fail i want to return a null pointer
+               rewind(courses);
                 return NULL;
             }
-            if (fscanf(tmpFile,"%d %d\n",&courseArr[i]->courseNumber,&courseArr[i]->courseSize)!=2||courseArr[i]->courseNumber<0
-            ||courseArr[i]->courseSize<0)
-            {
-                freeArr((void**)courseArr,i);
-                 return NULL;
-            }
+            fscanf(courses,"%d %d\n",&courseArr[i]->courseNumber,&courseArr[i]->courseSize);
             courseArr[i]->queue=NULL;
     }
+    rewind(courses);
     return courseArr;
     
 }
-hackerPtr* hackerEnrollment(FILE* hackers,int linesInHackerFile)//need to do more checks on lines in hackerfile
-{   
-    
-    FILE *tmpfile = hackers;
+
+hackerPtr* hackerEnrollment(FILE* hackers,int linesInHackerFile,int numOfStudents,int numOfCourses)//need to do more checks on lines in hackerfile
+{    
     hackerPtr* hackerArr = malloc(linesInHackerFile/4*sizeof(hackerPtr));
     int i =0;
     if(hackerArr==NULL)
@@ -101,62 +114,40 @@ hackerPtr* hackerEnrollment(FILE* hackers,int linesInHackerFile)//need to do mor
         if(hackerArr[i]==NULL)
         {
             freeArr((void**)hackerArr,i);
+            rewind(hackers);
             return NULL;
         }
-        if(fscanf(tmpfile,"%9d\n",&hackerArr[i]->id)!=1||hackerArr[i]->id<0)
-        {
-            freeArr((void**)hackerArr,i);
-            return NULL;
-        }
-        linesInHackerFile--;
-        //input everything into the courses file
-        if(fgets(hackerArr[i]->desiredCourses,BUFFER_LENGTH,tmpfile)==NULL)
-        {
-            freeArr((void**)hackerArr,i);
-            return NULL;
-        }
-         linesInHackerFile--;
-         //input everything into friends id
-        if(fgets(hackerArr[i]->friendsId,BUFFER_LENGTH,tmpfile)==NULL)
-        {
-            freeArr((void**)hackerArr,i);
-            return NULL;
-        }
-        linesInHackerFile--;
-        //input everything into enemiesid
-        if(fgets(hackerArr[i]->enemiesId,BUFFER_LENGTH,tmpfile)==NULL)
-        {
-            freeArr((void**)hackerArr,i);
-            return NULL;
-        }
-        linesInHackerFile--;
-        
+        fscanf(hackers,"%9d%*c",&hackerArr[i]->id);
+        fgets(hackerArr[i]->desiredCourses,(numOfCourses+1),hackers);  //the +1 is because there are spaces
+        //check for validity - check what checks need to be done inside fgets
+        fgets(hackerArr[i]->friendsId,(numOfStudents+1),hackers);
+        //check for validity
+        fgets(hackerArr[i]->enemiesId,(numOfStudents+1),hackers);
+           //check for validity
+           linesInHackerFile=linesInHackerFile-4;
         i++;
     }
+    rewind(hackers);
     return hackerArr;
 }
-//returns -2 if file is corrupt, returns -1 if there is no file,returns 0 if file is empty, returns num>0 if file is ok
+
 int linesInFile(FILE* f) //this function returns the number of lines in a given program and is a helper function
 {
-    char buffer[BUFFER_LENGTH];
-    FILE* tmp =f;
-    int count = 0;
-    if(tmp ==NULL)
+    char curr ;
+    int linesCounter = 0;
+    if(f==NULL)
     {
-        return -1; //if there is no file at all just return -1
+        return -1;
     }
-    while(fgets(buffer,BUFFER_LENGTH,f)!=NULL)
+    while((curr=fgetc(f)) != EOF)
     {
-        if(buffer[strlen(buffer)-1]=='\n')
+        if(curr == '\n')
         {
-            count++;
-        }
-        else
-        {
-            return -2; //there is an error with the file
+            linesCounter++;
         }
     }
-    return count;
+    rewind(f);
+    return linesCounter;
 }
 void freeArr(void** arr,int currIndex) //helper function to free any array
 {
@@ -166,8 +157,33 @@ void freeArr(void** arr,int currIndex) //helper function to free any array
     }
     free(arr);
 }
+bool personalizedFgetc(char* param, FILE* inputFile) // returns true in case the allocation worked false otherwise
+{  
+     char temp;
+   int charCounter = 1;
+       param = malloc(sizeof(char));
+    if(param==NULL)
+    {
+        free(param);
+        return false;
+    }
+    if((temp =fgetc(inputFile)) != EOF && temp != '\n' && temp!=' ')
+    {
+        param[0] = temp;
+    }
 
-
-
+    while ((temp =fgetc(inputFile)) != EOF && temp != '\n' && temp!=' ') 
+    {
+      charCounter++;   
+      param = realloc(param,charCounter*sizeof(char));
+      if(param==NULL)
+      {
+          free(param); 
+          return false;
+      }
+    param[charCounter-1] = temp;
+    }
+    return true;
+}
 
 
