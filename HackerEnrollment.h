@@ -8,7 +8,7 @@
 #ifndef HACKER_ENROLLMENT_H_
 #define HACKER_ENROLLMENT_H_
 
-#define BUFFER_LENGTH 256
+#define BUFFER_LENGTH 2048
 #define ID_LENGTH 10
 #define FRIENDSHIP_TH 20 //the friendship threshold as defined in the question
 #define ENEMY_TH -10 //the enemy threshold as defined in the question
@@ -28,11 +28,10 @@ typedef struct Course* coursePtr; //pointer to the courses
 typedef struct EnrollmentSystem_t* EnrollmentSystem; //pointer to the enrollment system
 
 //this struct holds the neccesary data on all the students, see that a student is also a hacker
-
-typedef struct 
+typedef struct Student
 {
 
-    char id[ID_LENGTH]; //must be 9 whole numbers - meaning need to check when opening file that this is the case
+   int id; //must be 9 whole numbers
     int totalCredits; //must be a whole number bigger than 0
     double gpa; //num 0-100
     char* name; 
@@ -43,31 +42,33 @@ typedef struct
 }Student;
 
 //this struct holds the neccesary data on the hackers
-typedef struct 
+typedef struct Hacker
 {
 
-    studentPtr student; //hacker is also a student, no need for id because we will find him in the student array
-    char** desiredCourses; //expectation to be only numbers
-    char *friendsId[ID_LENGTH];
-    char *enemiesId[ID_LENGTH];
+    int id; //9 digit num
+    char* desiredCourses; //expectation to be only numbers
+    char* friendsId; //9 digit number array
+    char* enemiesId; //9 digit num
+
 
 }Hacker;
 
 //this struct holds the data on all the courses queues
-typedef struct 
+typedef struct Course
 {
     int courseSize;
-    char* courseNumber;
+    int courseNumber;
     IsraeliQueue queue;
+
 }
 Course;
 
 //this is the struct that holds all the data on the enrollment system
-typedef struct
+typedef struct EnrollmentSystem_t
 {
-    studentPtr* students; //array of students
-    hackerPtr* hackers;  //array of hacker pointers
-    coursePtr* course; //array of courses
+    studentPtr* studentArr; //arr of students pointers
+    hackerPtr* hackerArr;  //arr of hacker pointers
+    coursePtr* courseArr; //arr of courses pointers
 
 }EnrollmentSystem_t;
 
@@ -82,7 +83,7 @@ typedef struct
 */
 int friendshipValueByHackerFile(hackerPtr,studentPtr); 
 int friendshipValueByASCII(char* hackerName,char* studentName); 
-int friendshipValueById(char hackerId[ID_LENGTH],char studentId[ID_LENGTH]); 
+int friendshipValueById(int hackerId,int studentId); 
 
 /**
  * OVERVIEW ON THE createEnrollment BELOW-
@@ -97,7 +98,7 @@ int friendshipValueById(char hackerId[ID_LENGTH],char studentId[ID_LENGTH]);
  * 3.FILE* hackers: <Student ID> \n<Course Numbers>*\n //Desired courses<Student ID>*\n //Friends<Student ID>*\n //Rivals
  */
 
-EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers);
+EnrollmentSystem createEnrollment(FILE*, FILE*,FILE*);
 
 /**
  * OVERVIEW ON readEnrollment BELOW-
