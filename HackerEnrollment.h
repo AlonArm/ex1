@@ -7,8 +7,7 @@
 
 #ifndef HACKER_ENROLLMENT_H_
 #define HACKER_ENROLLMENT_H_
-
-#define BUFFER_LENGTH 2048
+    
 #define ID_LENGTH 10
 #define FRIENDSHIP_TH 20 //the friendship threshold as defined in the question
 #define ENEMY_TH -10 //the enemy threshold as defined in the question
