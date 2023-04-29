@@ -70,7 +70,7 @@ EnrollmentSystem createEnrollment(FILE *students, FILE* courses, FILE* hackers)
 studentPtr* studentEnrollment(FILE* students,int linesInStudentFile) 
 {
     //here we input the data from the file into the struct, if there was failure in allocating memory then we free everything
-     studentPtr* studentArr = malloc(linesInStudentFile * sizeof(studentPtr)); 
+     studentPtr* studentArr = malloc((linesInStudentFile+1) * sizeof(studentPtr)); 
      if(studentArr==NULL)
      {  
          return NULL;
@@ -127,13 +127,14 @@ studentPtr* studentEnrollment(FILE* students,int linesInStudentFile)
             }
         
         }
+
         rewind(students);
         return studentArr;
 }
 coursePtr* courseEnrollment(FILE* courses,int linesInCourseFile)
 {
 
-    coursePtr* courseArr = malloc(linesInCourseFile*sizeof(coursePtr));
+    coursePtr* courseArr = malloc((linesInCourseFile+1)*sizeof(coursePtr));
     if(courseArr==NULL)
     {
         return NULL;
@@ -158,7 +159,7 @@ coursePtr* courseEnrollment(FILE* courses,int linesInCourseFile)
 }
 hackerPtr* hackerEnrollment(FILE* hackers,int linesInHackerFile,int numOfStudents,int numOfCourses)//need to do more checks on lines in hackerfile
 {    
-    hackerPtr* hackerArr = malloc(linesInHackerFile/4*sizeof(hackerPtr));
+    hackerPtr* hackerArr = malloc(((linesInHackerFile/4)+1)*sizeof(hackerPtr));
     int i =0;
     if(hackerArr==NULL)
     {
@@ -211,6 +212,7 @@ hackerPtr* hackerEnrollment(FILE* hackers,int linesInHackerFile,int numOfStudent
 }
 
 
+//the friendship check functions are under here
 
 
 //down here are all the functions that help us read the text from the files
@@ -259,7 +261,7 @@ void freeStudentStrings(studentPtr* studentArr,int currIndex)
 void intializeArr(void** arr,int length) 
 {
     int i = 0;
-    while(i<length)
+    while(i<length+1)
     {
     arr[i] =NULL;
     i++;
