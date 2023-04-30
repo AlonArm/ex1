@@ -19,6 +19,7 @@ funcNodePtr copyFunc(funcNodePtr); //this function appears later in the code and
 personPtr copyPersonQueue(personPtr head); //this helper function will create a copy of every person inside the function that coies everything
 int FuncListSize(funcNodePtr);
 int compare(IsraeliQueue, void*, void*);
+void destroyFuncList(funcNodePtr);
 
 struct funcNode
 {
