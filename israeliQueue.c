@@ -283,8 +283,37 @@ IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue queue, Friendshi
     return ISRAELI_QUEUE_ERROR;
 }
 
-IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue){
-  
+IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue queue){
+  if(queue == NULL) return ISRAELIQUEUE_BAD_PARAM;
+  personPtr advancingPerson = queue->tail;
+  while(advancingPerson != queue->head){
+    personPtr iterator = queue->head;
+    personPtr friend = NULL;
+    while(iterator != advancingPerson){
+      int compareResult = compare(queue, iterator->person, advancingPerson->person);
+      if(friend == NULL && compareResult == 1 && iterator->friendsPassed < FRIEND_QUOTA){
+        friend = iterator;
+      }else if(friend != NULL && compareResult == -1 && iterator->enemyHeldBack < RIVAL_QUOTA){
+        friend = NULL;
+        iterator->enemyHeldBack++;
+      }
+      iterator = iterator->next;
+    }
+    if(friend != NULL){
+      personPtr temp = advancingPerson->previous;
+      advancingPerson->next->previous = advancingPerson->previous;
+      advancingPerson->previous->next = advancingPerson->next;
+      advancingPerson->previous = friend;
+      advancingPerson->next = friend->next;
+      friend->next = advancingPerson;
+      friend->friendsPassed++;
+      advancingPerson = temp;
+    }
+    else{
+      advancingPerson = advancingPerson->previous;
+    }
+  }
+  return ISRAELIQUEUE_SUCCESS;
 }
 
 IsraeliQueue IsraeliQueueMerge(IsraeliQueue* qarr,ComparisonFunction func){
