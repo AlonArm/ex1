@@ -9,6 +9,8 @@ bool personalizedFgetc(char** param, FILE* inputFile); //creates a string from a
 void freeStudentStrings(studentPtr* studentArr,int currIndex);// this function is supposed to cut down on mundane operations
 void intializeArr(void** arr,int length); //this function initializes the array pointers to null
 void freeHackerStrings(hackerPtr* arr,int currIndex); //this function frees the hacker strings
+int asciiSum(char* firstName,int lengthFirstName,char* secondName,int lengthSecondName);//reads two strings and their length and returns the abs value of the difference between the two
+
 studentPtr* studentEnrollment(FILE* students,int linesInStudentFile); //helper function to keep the code more organized
 
 coursePtr* courseEnrollment(FILE* courses,int linesIncoursesFile); //helper function to keep the code more organized
@@ -64,6 +66,55 @@ EnrollmentSystem createEnrollment(FILE *students, FILE* courses, FILE* hackers)
     return system;
 
 }
+
+EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
+{       
+    bool flag =true; //for checking if found the element in the arr
+     int i = 0;
+     int courseNumber = -1;
+
+    int linesInQueue = linesInFile(queues);
+    if(linesInQueue<0)
+    {
+        return NULL;
+    }
+    if(linesInQueue==0) //if the file is just empty
+    {
+        return sys;
+    }
+    
+    for(int j = 0;j<linesInQueue;j++)
+    {
+        fscanf(queues,"%d",&courseNumber);
+    while(flag)
+    {
+        if(sys->courseArr[i]->courseNumber==courseNumber)
+        {
+            flag=false;
+        }
+        else
+        {
+        i++;
+        }
+    }
+     sys->courseArr[i]->queue = IsraeliQueueCreate(hackerEnrollmentfunctions,NULL,FRIENDSHIP_TH,ENEMY_TH);
+     if(sys->courseArr[i]->queue==NULL)
+     {
+         for(int k=0;k<=i;k++)
+         {
+             IsraeliQueueDestroy(sys->courseArr[k]->queue);
+         }
+         return NULL;
+     }
+    
+    
+    }
+
+
+
+
+}
+
 
 
 //this are the functions which read the texts from the files and enters them into our structs
@@ -213,7 +264,49 @@ hackerPtr* hackerEnrollment(FILE* hackers,int linesInHackerFile,int numOfStudent
 
 
 //the friendship check functions are under here
+//in these functions im going to assume that the given pointers are not null
+int friendshipValueByHackerFile(void* hackerParam,void* studentParam)
+{
+    hackerPtr hacker = (hackerPtr)hackerParam;
+    studentPtr student = (studentPtr)studentParam;
+if(strstr(hacker->friendsId,student->id)!=NULL)
+{
+    return 20; //as defined
+}
+if(strstr(hacker->enemiesId,student->id)!=NULL)
+{
+    return -20; //as defined
+}
+return 0; //as defined
+}
+int friendshipValueByASCII(void* hackerParam,void* studentParam) //need to find beforehand the hacker in the student array
+{   
+     studentPtr hacker = (studentPtr)hackerParam;
+    studentPtr student = (studentPtr)studentParam;
+   int hackerFnameLength =  strlen(hacker->name)+1;
+    int hackerLnameLength =  strlen(hacker->surName)+1;
+     int studentFnameLength =  strlen(student->name)+1;
+     int studentLnameLength =  strlen(student->surName)+1;
+    int sum = 0;
+    sum = asciiSum(hacker->name,hackerFnameLength,student->name,studentFnameLength);
+    sum+=asciiSum(hacker->surName,hackerLnameLength,student->surName,studentLnameLength);
+    return sum;
+    
 
+}
+//return the abs value of two strings difference (letter by letter)
+int friendshipValueById(void* hackerParam,void* studentParam)
+{
+    hackerPtr hacker = (hackerPtr)hackerParam;
+    studentPtr student = (studentPtr)studentParam;
+    int hackerIdInt = atoi(hacker->id);
+    int studentIdInt = atoi(student->id);
+    if(hackerIdInt>studentIdInt)
+    {
+        return hackerIdInt-studentIdInt;
+    }
+    return studentIdInt-hackerIdInt;
+}
 
 //down here are all the functions that help us read the text from the files
 //this function returns the number of lines in a given program and is a helper function
@@ -269,7 +362,7 @@ void intializeArr(void** arr,int length)
 
 }
 //this function reads a line and enters it intos somekind of buffer, returns true if succeded and false else
-bool readLine(char**buffer, FILE* inputFile) 
+bool readLine(char** buffer, FILE* inputFile) 
 {  
      char temp;
    int charCounter = 2;
@@ -306,7 +399,7 @@ bool personalizedFgetc(char** param, FILE* inputFile)
        *param = malloc(2*sizeof(char));
     if(*param==NULL)
     {
-        free(*param );
+        free(*param);
         return false;
     }
     if((temp =fgetc(inputFile)) != EOF && temp != '\n' && temp!=' ')
@@ -339,3 +432,27 @@ void freeHackerStrings(hackerPtr* arr,int currIndex)
         currIndex--;
     }
 }
+
+int asciiSum(char* firstName,int lengthFirstName,char* secondName,int lengthSecondName)
+{
+int j = 0;
+int sumReturn = 0;
+while(j<lengthFirstName||j<lengthSecondName)
+{
+    if(j==lengthFirstName)
+    {
+        sumReturn+=(int)secondName[j];
+    }
+    else if(j==lengthSecondName)
+    {
+        sumReturn+=(int)firstName[j];
+    }
+    else
+    {
+        sumReturn+=abs((int)(firstName[j]-secondName[j]));
+    }
+    j++;
+}
+return sumReturn;
+}
+
