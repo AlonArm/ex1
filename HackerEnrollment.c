@@ -452,3 +452,74 @@ int nameDifference(char* firstName, char* secondName)
     }
 return sum;
 }
+
+void hackEnrollment(EnrollmentSystem sys, FILE* out) //need to iterate here over student and not hacker arr
+{
+    if(sys==NULL||out==NULL)
+    {
+        return;
+    }
+    for(int i=0;sys->courseArr[i]!=NULL;i++) //looping through the courses to enter the hackers to the courses
+    {
+       for(int j=0;sys->studentArr[j]!=NULL;j++)
+       {
+           if(sys->studentArr[j]->hacker!=NULL) //if it is a hacker check if he wanted to enter to the course
+           {
+               for(int k=0;sys->studentArr[j]->hacker->desiredCourses[k]!=NULL;k++)
+               {
+                   if(atoi(sys->studentArr[j]->hacker->desiredCourses[k])==sys->courseArr[i]->courseNumber) //if hacker wanted to enter course
+                   {
+                       if(IsraeliQueueEnqueue(sys->courseArr[i]->queue,sys->studentArr[j])!=ISRAELIQUEUE_SUCCESS) //putting the hackers inside the course
+                       {
+                           return;
+                       }
+                   }
+               }
+           }
+       }
+    }
+
+    //in this part we will print to out file
+    FILE* tempFile=fopen("temporaryFile","w");
+    for(int l=0; sys->courseArr[l] !=NULL;l++) //[rinting to temp file the hackers and if hacker then desiredcourses--
+    {
+        int sizeOfCourse =sys->courseArr[l]->courseSize; //initializing a variable to know if hackers got in 
+        fprintf(tempFile,"%d",sys->courseArr[l]->courseNumber);
+      bool flag = true;
+      while(flag)
+      {
+         studentPtr studentDequeued = (studentPtr)IsraeliQueueDequeue(sys->courseArr[l]->queue);
+        if(studentDequeued==NULL) //if end of line
+        {
+            fprintf(tempFile,"\n"); //print end of line
+            flag = false;
+        }
+        else
+        {
+            sizeOfCourse--;
+            if(studentDequeued->hacker!=NULL&&sizeOfCourse>0) //if student is hacker and got into the course
+            {
+                studentDequeued->hacker->coursesHacked--;
+            }
+            fprintf(tempFile," %10s",studentDequeued->id); //print to the temp file
+        }
+      }
+    }
+   fclose(tempFile);
+    for(int g=0;sys->hackerArr[g]!=NULL;g++) //if one hacker didnt get in to two course print this to out
+    {
+        if(sys->hackerArr[g]->coursesHacked>0)
+        {
+            
+            fprintf(out,"Cannot satisfy constraints for %s",sys->hackerArr[g]->id);
+        }
+    }
+    FILE* readTemp =fopen("temporaryFile","r");
+    char c = fgetc(readTemp);
+    while(c!=EOF)
+    {
+        fputc(c,out);
+        c=fgetc(readTemp);
+    }
+}
+
