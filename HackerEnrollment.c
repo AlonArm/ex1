@@ -3,10 +3,11 @@
 #include <string.h>    
 
 void destroyStudent(void*temp)
-{
+{ 
     studentPtr student =(studentPtr)temp;
     if(student!=NULL)
     {
+        //we free everything that we have allocated, maybe because i didnt build the char** elements might cause a problem
     free(student->city);
     free(student->name);
     free(student->surName);
@@ -17,6 +18,7 @@ void destroyStudent(void*temp)
 
 void destroyCourse(void* temp)
 {
+    //the course doesnt hold dynamically allocated data except for the queue therefore well only destroy queue
     coursePtr course = (coursePtr)temp;
     if(course!=NULL)
     {
@@ -30,6 +32,7 @@ void destroyHacker(void* temp)
     hackerPtr hacker = (hackerPtr)temp;
     if(hacker!=NULL)
     {
+        //same thing with char** i didnt create the elements but im not sure that it wont leak
         free(hacker->desiredCourses);
          free(hacker->friendsId);
           free(hacker->enemiesId);
@@ -40,19 +43,20 @@ void destroyHacker(void* temp)
 
 EnrollmentSystem createEnrollment(FILE* students, FILE* courses,FILE* hackers)
 {
-    if(students==NULL||courses==NULL||hackers==NULL)
+    if(students==NULL||courses==NULL||hackers==NULL) //if one is null then there is a problem
     {
         return NULL;
     }
     EnrollmentSystem sys = (EnrollmentSystem)malloc(sizeof(EnrollmentSystem_t));
-    if(sys==NULL)
+    if(sys==NULL) //if the malloc didnt succeed returning null
     {
         return NULL;
     }
-    sys->courseArr=inputCourseFile(courses);
-    sys->studentArr=inputStudentFile(students);
-    sys->hackerArr=inputHackerFile(hackers,sys->studentArr);
-    if(sys->hackerArr==NULL||sys->courseArr==NULL||sys->studentArr==NULL)
+    sys->courseArr=inputCourseFile(courses); //use of malloc
+   sys->hackerArr=inputHackerFile(hackers);
+    sys->studentArr=inputStudentFile(students,sys->hackerArr);
+
+    if(sys->hackerArr==NULL||sys->courseArr==NULL||sys->studentArr==NULL) //if malloc didnt succeed free so no memory leak
     {
         destroyArr((void**)sys->hackerArr,destroyHacker);
         destroyArr((void**)sys->courseArr,destroyCourse);
@@ -65,61 +69,58 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses,FILE* hackers)
 
 EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
 {
-    if(sys==NULL||queues==NULL)
+    if(sys==NULL||queues==NULL) //if param are bad return null
     {
         return NULL;
     }
     
-    int lines = linesInFile(queues);
-    if(lines==-1||lines==0)
+    int lines = linesInFile(queues); //check how many lines in file
+    if(lines==-1||lines==0) //if file doesnt have lines or is corrupt return null
     {
         return NULL;
     }
-    for(int i =0;i<=lines;i++)
+    for(int i =0;i<=lines;i++) //for all lines in the file
     {
         int courseNumber = -1;
-        fscanf(queues,"%d ",&courseNumber);
+        fscanf(queues,"%d ",&courseNumber); //scan the course number
         int j = 0;
 
-        while( sys->courseArr[j]!=NULL&&sys->courseArr[j]->courseNumber!=courseNumber)
+        while( sys->courseArr[j]!=NULL&&sys->courseArr[j]->courseNumber!=courseNumber) //check for the coursenum in the courses array once found stop
         {
          j++;
         }
-        int numOfIds = numOfElementsInLine(queues);
-        int lengthofLine = lineLength(queues);
-        char buffer[lengthofLine+1];
-        fgets(buffer,lengthofLine+1,queues);
-        char** input=NULL;
-        if(sys->courseArr[j]->queue==NULL)
+        int numOfIds = numOfElementsInLine(queues);  //check how many ids the course has 
+        char** input=NULL; //initialize the input array
+        if(sys->courseArr[j]->queue==NULL) //if there is something wrong with the queue delete all queues
         {
             int k = 0;
-            while(sys->courseArr[k]!=NULL)
+            while(sys->courseArr[k]!=NULL) 
             {
                 
                IsraeliQueueDestroy(sys->courseArr[k]->queue);
                return NULL;
             }
         }
-        input = splitBufferToArr(buffer,numOfIds);
-         if(input==NULL)
+        input = splitLineToArrStrings(queues); //create the array of ids with malloc
+         if(input==NULL) //if the malloc failed destroy the queues that you have added the inputs to
          {
              int k = 0;
             while(sys->courseArr[k]!=NULL)
             { 
-               IsraeliQueueDestroy(sys->courseArr[k]->queue);
+               IsraeliQueueDestroy(sys->courseArr[k]->queue); 
                return NULL;
             }
          }
         int l=0; //indexes for the next iterations
        
-        while(l<numOfIds)
+        while(l<numOfIds) //search for the ids in the student arr, and when you find them add the, using enqueue
         {
              int m =0; //indexes for the next iterations
          while(strcmp(input[l],sys->studentArr[m]->id)!=0)
          {
              m++;
          }   
-        if(IsraeliQueueEnqueue(sys->courseArr[j]->queue,(void*)sys->studentArr[m])!=ISRAELIQUEUE_SUCCESS)
+        if(IsraeliQueueEnqueue(sys->courseArr[j]->queue,(void*)sys->studentArr[m])!=ISRAELIQUEUE_SUCCESS) //if malloc not succeeded delete
         {
             int k = 0;
             while(sys->courseArr[k]!=NULL)
@@ -138,7 +139,7 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
 
 void destroyArr(void** arr, void (*destroyStruct)(void *))
 {
-    if(arr!=NULL&&destroyStruct!=NULL)
+    if(arr!=NULL&&destroyStruct!=NULL) //if inputs are not bad delete all elements of the array
     {
     int i = 0;
 while(arr[i]!=NULL)
@@ -151,329 +152,257 @@ free(arr);
 }
 }
 
-studentPtr* inputStudentFile(FILE* f)
+studentPtr* inputStudentFile(FILE* f,hackerPtr* hackerArr)
 {
-   int numOfLines = linesInFile(f);
-   if(numOfLines==-1)
-   {
-       return NULL;
-   }
+   int numOfLines = linesInFile(f); //searching how much students to create every line = 1 student
     studentPtr* StudentArr = (studentPtr*)malloc(sizeof(studentPtr)*(numOfLines+1));
     for(int i = 0;i<numOfLines;i++)
-    {
-        StudentArr[i]=(studentPtr)malloc(sizeof(Student));
-        if(StudentArr[i]==NULL)
+    { 
+        StudentArr[i]=(studentPtr)malloc(sizeof(Student)); 
+        if(StudentArr[i]==NULL) //if malloc didnt succeed delete all the mallocs created
         {
-           while(i>=0)
-           {
-               destroyStudent(StudentArr[i]);
-               i--;
-           }
-           free(StudentArr);
+          destroyArr((void**)StudentArr,destroyStudent);
            return NULL;
         }
-        fscanf(f,"%10s %d %lf ",StudentArr[i]->id,&StudentArr[i]->totalCredits,&StudentArr[i]->gpa);
+        fscanf(f,"%10s %d %lf ",StudentArr[i]->id,&StudentArr[i]->totalCredits,&StudentArr[i]->gpa); //scan the data you can with fscanf
         int restOfLineLength = lineLength(f);
         char buffer[restOfLineLength+1];
         if(fgets(buffer,restOfLineLength,f)==NULL)
         { 
             printf("error in fgets");
-            while(i>=0)
-           {
-               destroyStudent(StudentArr[i]);
-               i--;
-           }
-           free(StudentArr);
+             destroyArr((void**)StudentArr,destroyStudent);
            return NULL;
         }
-        StudentArr[i]->name = strtok(buffer," ");
+        StudentArr[i]->name = strtok(buffer," "); //print the rest of the line to each buffer in their order in the file
          StudentArr[i]->surName = strtok(NULL," ");
           StudentArr[i]->city = strtok(NULL," ");
-           StudentArr[i]->department = strtok(NULL," ");
+           StudentArr[i]->department = strtok(NULL,"\n"); //end of line so the delimeter is the end
         if(StudentArr[i]->city==NULL||StudentArr[i]->name==NULL||StudentArr[i]->surName==NULL||StudentArr[i]->department==NULL)
-      {
-          while(i>=0)
-           {
-               destroyStudent(StudentArr[i]);
-               i--;
-           }
-          free(StudentArr);
+      { //if one of the params is baad delete all the allocated memory
+           destroyArr((void**)StudentArr,destroyStudent);
           return NULL;
      }       
+        int j =0;
+        StudentArr[i]->hacker=NULL; //initializing the hacker, 
+        while(hackerArr[j]!=NULL) //search if the student is also a hacker if so put a pointer to the hacker
+        {
+            if(strcmp(StudentArr[i]->id,hackerArr[j]->id)==0)
+            {
+                StudentArr[i]->hacker=hackerArr[j];
+            }
+            j++;
+        }
+
     }
-    StudentArr[numOfLines]=NULL;
+    StudentArr[numOfLines]=NULL; //put the last element in the arr as a null to know it is the end
     return StudentArr;
 
 }
 
 coursePtr* inputCourseFile(FILE* f)
 {
-    if(f==NULL)
-    {
-        return NULL;
-    }
   int numOflines = linesInFile(f);
-  if(numOflines==-1)
-  {
-      return NULL;
-  }
-  coursePtr* courseArr = (coursePtr*)malloc(sizeof(coursePtr)*(numOflines+1));
-    if(courseArr==NULL)
+  coursePtr* courseArr = (coursePtr*)malloc(sizeof(coursePtr)*(numOflines+1)); //create the course array
+    if(courseArr==NULL) //if malloc didnt succeed exit the function
     {
         return NULL;
     }
-    for(int i= 0;i<=numOflines;i++)
+    for(int i= 0;i<=numOflines;i++) //loop through all the lines of the file to input the data into the course array
     {
-        courseArr[i]= (coursePtr)malloc(sizeof(Course));
-        if(courseArr[i]==NULL)
+        courseArr[i]= (coursePtr)malloc(sizeof(Course)); //create each student
+        if(courseArr[i]==NULL) //if malloc fails delete all previously created students
         {
-            while(i>=0)
-            {
-                destroyCourse(courseArr[i]);
-                i--;
-            }
-            free(courseArr);
+             destroyArr((void*)courseArr,destroyCourse);
             return NULL;
         }
-        fscanf(f,"%d %d\n",&courseArr[i]->courseNumber,&courseArr[i]->courseSize);
-        courseArr[i]->queue = IsraeliQueueCreate(NULL,NULL,FRIENDSHIP_TH,ENEMY_TH);
+        fscanf(f,"%d %d\n",&courseArr[i]->courseNumber,&courseArr[i]->courseSize); //scan the static data into the struct
+        courseArr[i]->queue = IsraeliQueueCreate(NULL,NULL,FRIENDSHIP_TH,ENEMY_TH); //create the israeliQueue
         
         if(IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueById)!=ISRAELIQUEUE_SUCCESS||
         IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueByHackerFile)!=ISRAELIQUEUE_SUCCESS
-        ||IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueByASCII)!=ISRAELIQUEUE_SUCCESS)
+        ||IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueByASCII)!=ISRAELIQUEUE_SUCCESS) //add the wanted frienship functions if error then malloc failed and delete the whole data struct
         {
-             while(i>=0)
-            {
-                destroyCourse(courseArr[i]);
-                i--;
-            }
-            free(courseArr);
+            destroyArr((void**)courseArr,destroyCourse);
             return NULL;
         }
     }
-    courseArr[numOflines]=NULL;
+    courseArr[numOflines]=NULL; //put in the last element in the array null to indicate end of arr
     return courseArr;
 
 }
 
-hackerPtr* inputHackerFile(FILE *f,studentPtr* studentArr)
+hackerPtr* inputHackerFile(FILE *f)
 {
-        if(f==NULL)
+    int numOfLines = linesInFile(f); 
+    if(numOfLines%4!=0) //each four lines is 1 struct so checking to see if there are 4*n lines in file
     {
         return NULL;
     }
-    int numOfLines = linesInFile(f);
-    if(numOfLines==-1||numOfLines%4!=0)
+    hackerPtr* hackerArr = (hackerPtr*)malloc(sizeof(hackerPtr)*(numOfLines/4+1)); //creating the struct and checking if worked
+    if(hackerArr==NULL) //exit function if alloc didnt work
     {
         return NULL;
     }
-    hackerPtr* hackerArr = (hackerPtr*)malloc(sizeof(hackerPtr)*(numOfLines/4+1));
-    if(hackerArr==NULL)
-    {
-        return NULL;
-    }
-    for(int i=0;i<numOfLines;i++)
+    for(int i=0;i<numOfLines;i++) //iterating and creating the structs and putting them inside the array
     {
         hackerArr[i]= (hackerPtr)malloc(sizeof(Hacker));
-        if(hackerArr[i]==NULL)
-        {
-        while(i>=0)
-        {
-            destroyHacker(hackerArr[i]);
-            i--;
-        }
-        free(hackerArr);
+          destroyArr((void**)hackerArr,destroyHacker);
         return NULL;
-        }
+        
         //change this part to be less repetetive
         fscanf(f,"%10s\n",hackerArr[i]->id);
-        int numOfValuesInDesiredCourses = numOfElementsInLine(f);
-        int lengthDesiredCourses = lineLength(f);
-        char bufferDesiredCourses[lengthDesiredCourses+1];
-        fgets(bufferDesiredCourses,lengthDesiredCourses+1,f);
-        hackerArr[i]->desiredCourses=splitBufferToArr(bufferDesiredCourses,numOfValuesInDesiredCourses);
-
-        int numOfValuesInfriends = numOfElementsInLine(f);
-        int lengthFriendsId = lineLength(f);
-        char bufferFriendsId[lengthFriendsId+1];
-        fgets(bufferFriendsId,lengthFriendsId+1,f);
-         hackerArr[i]->friendsId=splitBufferToArr(bufferFriendsId,numOfValuesInfriends);
-
-        int numOfValueInEnenmy = numOfElementsInLine(f);
-        int lengthEnemiesId= lineLength(f);
-        char bufferEnemiesId[lengthEnemiesId+1];
-        fgets(bufferEnemiesId,lengthEnemiesId+1,f);
-         hackerArr[i]->enemiesId=splitBufferToArr(bufferEnemiesId,numOfValueInEnenmy);
-         if(hackerArr[i]->friendsId==NULL||hackerArr[i]->enemiesId==NULL||hackerArr[i]->desiredCourses==NULL)
+        hackerArr[i]->desiredCourses=splitLineToArrStrings(f); //putting the currents hacker's dynamic data, splitLineToArrStrings contains malloc
+        hackerArr[i]->friendsId=splitLineToArrStrings(f);
+        hackerArr[i]->enemiesId=splitLineToArrStrings(f);
+         if(hackerArr[i]->friendsId==NULL||hackerArr[i]->enemiesId==NULL||hackerArr[i]->desiredCourses==NULL) //checking if memalloc succeeded, if not free the array
          {
-             while(i>=0)
-             {
-                 destroyHacker(hackerArr[i]);
-                 i--;
-             }
-             free(hackerArr);
+             destroyArr((void**)hackerArr,destroyHacker);
              return NULL;
          }   
-
-            int j =0;
-            while(strcmp(studentArr[j]->id,hackerArr[i]->id)!=0)
-            {
-                j++;
-            }    
-            hackerArr[i]->name=studentArr[i]->name;
-            hackerArr[i]->surName=studentArr[i]->surName;
             hackerArr[i]->coursesHacked=2; //initializing this to 2 so that when it reaches 0 i know he is ok
-
     }
-    hackerArr[numOfLines]=NULL;
+ hackerArr[numOfLines]=NULL; //the last element should be null to indicate end of array
   return hackerArr; 
 }
 
 int lineLength(FILE *f)
 {
-    if (f==NULL)
-    {
-        return -1;
-    }
     int i=0;
-    long position = ftell(f);
+    long position = ftell(f); //saving the initial position of the file pointer
     char c;
-    while((c =fgetc(f))!='\n'||c!=EOF)
+    while((c =fgetc(f))!='\n'||c!=EOF) //while we are still int the line 
     {
         i++;
     }
-    fseek(f, position, SEEK_SET);
+    fseek(f, position, SEEK_SET); //returning the positin to its initial position
     return i;
 }
 
 int numOfElementsInLine(FILE *f)
 {
-     if (f==NULL)
-    {
-        return -1;
-    }
     int i=0;
-    long position = ftell(f);
+    long position = ftell(f); //saving the initial position of the file pointer
     char c;
-    while((c =fgetc(f))!='\n'||c!=EOF)
+    while((c =fgetc(f))!='\n'||c!=EOF) //while not at the end of the line or the end of the file
     {
-    if(c==' ')
+    if(c==' ') // counting is space is encountered
     {
         i++;
     }
    
     }
-     fseek(f,position,SEEK_SET);
+     fseek(f,position,SEEK_SET); //setting the file pointer back
     return i;
 }
 
 int linesInFile(FILE* f)
 {
-    if(f==NULL)
-    {
-        return -1;
-    }
+    long position = ftell(f); //saving the initial position of the file pointer
     int i = 0;
-    char c=fgetc(f);
-        if(c==EOF)
-        {
-            return i;
-        }
-        i++;
+    char c=fgetc(f); 
     while(c!=EOF)
     {
-        if(c=='\n')
+        if(c=='\n') //every time reached the new line charachter add 1
         {
             i++;
         }
         c= fgetc(f);
     }
-    rewind(f);
+    fseek(f,position,SEEK_SET); //setting the file pointer back
     return i;
     
 }
 
-char** splitBufferToArr(char* buffer,int numOfElements)
+char** splitBufferToArr(char* buffer,int numOfElements) //the buffer cannot cotain the end of line character
 {
-    if(buffer==NULL||numOfElements==-1)
+    if(buffer==NULL)//if buffer is null then something is wrong
     {
         return NULL;
     }
-    char** arr = malloc((numOfElements+1)*sizeof(char*));
+    char** arr = malloc((numOfElements+1)*sizeof(char*));//creating the array with 1 more space to have space for the last element
     if(arr==NULL)
     {
         return NULL;
     }
-    char* token = strtok(buffer, " ");
-  for(int i=0;i<numOfElements;i++)
+    char* token = strtok(buffer, " "); //creating the strtok
+  for(int i=0;i<numOfElements-1;i++) //iterating the inputs into the arr up until ine element before the end
   {
-
       arr[i] = token;
       token = strtok(NULL, " ");
   }
-  arr[numOfElements+1]=NULL;
+    arr[numOfElements-1]=token;
+  arr[numOfElements]=NULL;
   return arr;
-    
+}
 
+char** splitLineToArrStrings(FILE *f)
+{
+    //this functions utilizes the other functions to create an array of strings
+     int numOfValueInLine = numOfElementsInLine(f);
+     int lengthOfLine = lineLength(f);
+     char buffer[lengthOfLine+1];
+     fgets(buffer,lengthOfLine+1,f);
+     return splitBufferToArr(buffer,numOfValueInLine); //this will return null if error
 }
 
 int friendshipValueByHackerFile(void* paramHacker,void* paramStudent)
 {
-    hackerPtr hacker =(hackerPtr)paramHacker;
+    studentPtr hacker =(studentPtr)paramHacker; //creating the pointers
     studentPtr student =(studentPtr)paramStudent;
     
     int i = 0;
-    while(hacker->friendsId[i]!=NULL)
+    while(hacker->hacker->friendsId[i]!=NULL) //checking if friends
     {
-        if(strcmp(student->id,hacker->friendsId[i])==0)
+        if(strcmp(student->id,hacker->hacker->friendsId[i])==0)
         {
             return 20;
-        }
+        } 
         i++;
     }
     int j =0;
-    while(hacker->enemiesId[j]!=NULL)
+    while(hacker->hacker->enemiesId[j]!=NULL) //checking if enemies
     {
-        if(strcmp(student->id,hacker->enemiesId[j])==0)
+        if(strcmp(student->id,hacker->hacker->enemiesId[j])==0)
         {
             return -20;
         }
         j++;
     }
-    return 0;
+    return 0; //returning 0 if neither freinds and enemies
 }
 
 int friendshipValueById(void* hackerId,void* studentId)
 {
-    hackerPtr hacker = (hackerPtr)hackerId;
+    studentPtr hacker = (studentPtr)hackerId; //creating the pointers
     studentPtr student = (studentPtr)studentId;
 
-        int hackerValue = atoi(hacker->id);
+        int hackerValue = atoi(hacker->id); //turning values to int
         int studentValue = atoi(student->id);
-        if(hackerValue-studentValue>0)
+        if(hackerValue-studentValue>0) //returning the absolute values
         {
-           return hackerValue-studentValue;
+           return hackerValue-studentValue; 
         }
         return studentValue-hackerValue;
 }
 
 int friendshipValueByASCII(void* hackerParam,void* studentParam)
 {
-    hackerPtr hacker = (hackerPtr)hackerParam;
+    studentPtr hacker = (studentPtr)hackerParam; //creating the pointers
     studentPtr student = (studentPtr)studentParam;
     int value=0;
-    value=nameDifference(hacker->name,student->name);
+    value=nameDifference(hacker->name,student->name); //nameDifference returns the difference in values in two names
     value+=nameDifference(hacker->surName,student->surName);
     return value;
 }
 
 char changeCapitalLetter(char c)
 {
-        if(c>=65&&c<=91)
+    
+        if(c>=65&&c<=91) //if capital letters then change to normal
         {
         c=c+32;
         }
-        return c;
+        return c; //return the value of small letters
 }
 
 int nameDifference(char* firstName, char* secondName)
@@ -481,10 +410,10 @@ int nameDifference(char* firstName, char* secondName)
     int sum=0;
     int j =0;
     char name1;
-    char name2;
+    char name2;  
 
    
-    while(firstName[j]!='\0'&&secondName[j]!='\0')
+    while(firstName[j]!='\0'&&secondName[j]!='\0') //looping to check for each letter the difference
     { 
         name1 =changeCapitalLetter(firstName[j]);
         name2 =changeCapitalLetter(secondName[j]);
@@ -498,11 +427,11 @@ int nameDifference(char* firstName, char* secondName)
         }
         j++;
     }
-    if(strlen(firstName)==strlen(secondName))
+    if(strlen(firstName)==strlen(secondName)) //as specified
     {
         return sum;
     }
-    if(strlen(firstName)>strlen(secondName))
+    if(strlen(firstName)>strlen(secondName))//as specified
     {
         
         while(firstName[j]!='\0')
@@ -511,7 +440,7 @@ int nameDifference(char* firstName, char* secondName)
             j++;
         }
     }
-    if(strlen(secondName)>strlen(firstName))
+    if(strlen(secondName)>strlen(firstName))//as specified
     {
         
         while(secondName[j]!='\0')
@@ -522,71 +451,4 @@ int nameDifference(char* firstName, char* secondName)
         
     }
 return sum;
-}
-
-void hackEnrollment(EnrollmentSystem sys, FILE* out)
-{
-    int i =0;
-    while(sys->courseArr[i]!=NULL)
-    {
-        int j=0;
-        while(sys->hackerArr[j]!=NULL)
-        {
-            int k=0;
-            while(sys->hackerArr[j]->desiredCourses!=NULL)
-            {
-                if(atoi(sys->hackerArr[j]->desiredCourses[k])==sys->courseArr[i]->courseNumber)
-                {
-                    if(IsraeliQueueEnqueue(sys->courseArr[i]->queue,(void*)sys->hackerArr[j])!=ISRAELIQUEUE_SUCCESS)
-                    {
-                        return; //i seriously have no idea what else to do in a void function if this alloc fails
-                    }
-                    if(israeliQueueGetPosition(sys->courseArr[i]->queue,(void*)sys->hackerArr[j])<sys->courseArr[i]->courseSize)
-                    {
-                        sys->hackerArr[j]->coursesHacked--;
-                    }
-                }
-                k++;
-            }
-            j++;
-        }
-        i++;
-    }
-    
-    int l=0;
-    while(sys->hackerArr[l]!=NULL)
-    {
-        if(sys->hackerArr[l]->coursesHacked>0)
-        {
-            fprintf(out,"Cannot satisfy constraints for %s",sys->hackerArr[l]->id);
-            return;
-        }
-    }
-    
-
-}
-int israeliQueueGetPosition(IsraeliQueue queue ,void* data)
-{
-    int i=1;
-    personPtr temp =queue->head;
-    while(temp!=NULL)
-    {
-        if(temp->person==data)
-        {
-            return i;
-        }
-        i++;
-        temp=temp->next;
-    }
-    return -1;//if error but there is not supposed to be any
-}
-
-void printQueueToFile(IsraeliQueue queue,FILE* out)
-{
-    personPtr temp =queue->head;
-    while(temp!=NULL)
-    {
-     
-     fprintf(out, "%s ",)
-    }
 }
