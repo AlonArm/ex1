@@ -41,18 +41,21 @@ int main(int argc, char** argv){
         fclose(courses);
         return 0;
     }
-    //bool ignoreBigLetters = argc == 7 && !strcmp(argv[1], "-i");
+    bool ignoreBigLetters = argc == 7 && !strcmp(argv[1], "-i");
     //ignoreBigLetters needs to be added to the enrollment system
     EnrollmentSystem system = createEnrollment(students, courses, hackers);
     if(system != NULL){
+        if(ignoreBigLetters){
+            changeCapitalLetters(system);
+        }
         EnrollmentSystem queuedSystem = readEnrollment(system, queues);
         if(queuedSystem != NULL){
             hackEnrollment(queuedSystem, target);
             printf("Enrollment system was changed successfully");
+            destroyEnrollmentSystem(queuedSystem);   
         }
-        //destroy queuedSystem
     }
-    //destroy system
+    destroyEnrollmentSystem(system);
     fclose(target);
     fclose(queues);
     fclose(hackers);

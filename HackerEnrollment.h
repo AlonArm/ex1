@@ -46,7 +46,6 @@ typedef struct Student
 //this struct holds the neccesary data on the hackers
 typedef struct Hacker
 {
-
     char id[ID_LENGTH]; //9 digit num
     char** desiredCourses; //List of integers  NOT POINTER TO INT
     char** friendsId; //list of 9 digit char (so char[10]) NOT POINTER TO CHAR
@@ -88,9 +87,9 @@ int friendshipValueById(void*,void*);
 int friendshipValueByASCII(void*,void*); //see that this function is different because this function takes 
 
 /**
- * this function is used to change the capital letters to small letters
+ * this function is used to change the capital letters to small letters on all names and surnames
 */
-char changeCapitalLetter(char c);
+void changeCapitalLetters(EnrollmentSystem);
 
 /**
  * this function is used to check the difference between the ascii values of two words
@@ -204,5 +203,6 @@ int israeliQueueGetPosition(IsraeliQueue queue ,void* data);
  */
 
 char** splitLineToArrStrings(FILE *f);
+void destroyEnrollmentSystem(EnrollmentSystem);
 
 #endif
