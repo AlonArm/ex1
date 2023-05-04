@@ -39,6 +39,7 @@ typedef struct Student
     char* surName; 
     char* city; 
     char* department;
+    hackerPtr hacker;
 
 }Student;
 
@@ -47,8 +48,6 @@ typedef struct Hacker
 {
 
     char id[ID_LENGTH]; //9 digit num
-    char* name;
-    char* surName;
     char** desiredCourses; //List of integers  NOT POINTER TO INT
     char** friendsId; //list of 9 digit char (so char[10]) NOT POINTER TO CHAR
     char** enemiesId; //list of 9 digit char (so char[10]) NOT POINTER TO CHAR
@@ -158,7 +157,7 @@ void destroyHacker(void*  hacker); // done
 /**
  * this function inputs a student file into and creates a array of student structs takes into account the file is valid
 */
-studentPtr* inputStudentFile(FILE* student);//done
+studentPtr* inputStudentFile(FILE* student,hackerPtr*);//done
 
 /**
  * this function inputs a course file into and creates a array of course structs
@@ -168,7 +167,7 @@ coursePtr* inputCourseFile(FILE* course); //done
 /**
  * this function inputs a course file into and creates an array of course structs
 */
-hackerPtr* inputHackerFile(FILE* Hacker,studentPtr*); //done
+hackerPtr* inputHackerFile(FILE* Hacker); //done
 
 /**
  * this function tells us the size of a line, mainly used for a buffer
@@ -199,5 +198,11 @@ void destroyArr(void** arr, void (*destroyStruct)(void *));
  * this functiontells you at what position the data has entered the list
 */
 int israeliQueueGetPosition(IsraeliQueue queue ,void* data);
+
+/**
+ * this function is used to split a line of a file into a string array
+ */
+
+char** splitLineToArrStrings(FILE *f);
 
 #endif
