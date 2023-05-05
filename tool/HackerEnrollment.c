@@ -322,10 +322,14 @@ char** splitLineToArrStrings(FILE *f)
     return arr;
 }
 
-int friendshipValueByHackerFile(void* paramHacker,void* paramStudent)
+int friendshipValueByHackerFile(void* firstStudent,void* secondStudent)
 {
-    studentPtr hacker =(studentPtr)paramHacker; //creating the pointers
-    studentPtr student =(studentPtr)paramStudent;
+    studentPtr hacker =(studentPtr)firstStudent; //creating the pointers
+    studentPtr student =(studentPtr)secondStudent;
+    if(hacker->hacker==NULL&&student->hacker==NULL)
+    {
+        return 0; //the return value of not friends and not enemies
+    }
     
     int i = 0;
     while(hacker->hacker->friendsId[i]!=NULL) //checking if friends
@@ -348,10 +352,14 @@ int friendshipValueByHackerFile(void* paramHacker,void* paramStudent)
     return 0; //returning 0 if neither freinds and enemies
 }
 
-int friendshipValueById(void* hackerId,void* studentId)
+int friendshipValueById(void* firstStudent,void* secondStudent)
 {
-    studentPtr hacker = (studentPtr)hackerId; //creating the pointers
-    studentPtr student = (studentPtr)studentId;
+    studentPtr hacker = (studentPtr)firstStudent; //creating the pointers
+    studentPtr student = (studentPtr)secondStudent;
+    if(hacker->hacker==NULL&&student->hacker==NULL)
+    {
+        return 0; //the return value of not friends and not enemies
+    }
 
         int hackerValue = atoi(hacker->id); //turning values to int
         int studentValue = atoi(student->id);
@@ -362,10 +370,14 @@ int friendshipValueById(void* hackerId,void* studentId)
         return studentValue-hackerValue;
 }
 
-int friendshipValueByASCII(void* hackerParam,void* studentParam)
+int friendshipValueByASCII(void* firstStudent,void* secondStudent)
 {
-    studentPtr hacker = (studentPtr)hackerParam; //creating the pointers
-    studentPtr student = (studentPtr)studentParam;
+    studentPtr hacker = (studentPtr)firstStudent; //creating the pointers
+    studentPtr student = (studentPtr)secondStudent;
+   if(hacker->hacker==NULL&&student->hacker==NULL)
+    {
+        return 0; //the return value of not friends and not enemies
+    }
     int value=0;
     value=nameDifference(hacker->name,student->name); //nameDifference returns the difference in values in two names
     value+=nameDifference(hacker->surName,student->surName);
