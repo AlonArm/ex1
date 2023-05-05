@@ -152,6 +152,10 @@ void destroyCourse(void*  course); // done
 */
 void destroyHacker(void*  hacker); // done
 
+/**
+ * this function frees all memroy inside the enrollmentSystem struct
+*/
+void destroyEnrollmentSystem(void*  sys); // done
 
 /**
  * this function inputs a student file into and creates a array of student structs takes into account the file is valid
