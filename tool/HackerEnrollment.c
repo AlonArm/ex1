@@ -384,8 +384,7 @@ int friendshipValueByASCII(void* firstStudent,void* secondStudent)
     return value;
 }
 
-void changeCapitalLetter(EnrollmentSystem sys)
-{   
+void changeCapitalLetters(EnrollmentSystem sys){   
     if(sys == NULL){
         return;
     }
