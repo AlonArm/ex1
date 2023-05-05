@@ -45,7 +45,7 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction* friendFunctions, ComparisonF
   queue->rivalry_th = rivalTres;
   queue->head=NULL; //so that there are no errors
   queue->tail = NULL;
-  if(friendFunctions[0] != NULL)
+  if(friendFunctions != NULL && friendFunctions[0] != NULL)
   {
     queue->funcList = (funcNodePtr)(malloc(sizeof(struct funcNode)));
     queue->funcList->func = friendFunctions[0];

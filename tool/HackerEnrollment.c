@@ -40,14 +40,12 @@ void destroyHacker(void* temp)
     }
 }
 
-void destroyEnrollmentSystem(void* temp)
+void destroyEnrollmentSystem(EnrollmentSystem sys)
 {
-    EnrollmentSystem sys =(EnrollmentSystem)temp;
-    if(sys!=NULL)
-    {
-       destroyArr((void**)sys->hackerArr,destroyHacker);
-       destroyArr((void**)sys->studentArr,destroyStudent);
-       destroyArr((void**)sys->courseArr,destroyCourse);
+    if(sys!=NULL){
+        destroyArr((void**)sys->hackerArr,destroyHacker);
+        destroyArr((void**)sys->studentArr,destroyStudent);
+        destroyArr((void**)sys->courseArr,destroyCourse);
         free(sys);
     }
 }
@@ -77,59 +75,78 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses,FILE* hackers)
 
 EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
 {
+    printf("read0\n");
     if(sys==NULL||queues==NULL) //if param are bad return null
     {
         return NULL;
     }
-    
+    printf("read1\n");
     int lines = linesInFile(queues); //check how many lines in file
+    printf("read2\n");
     if(lines==0) //if file doesnt have lines or is corrupt return null
     {
         return NULL;
     }
+    printf("read3\n");
     for(int i =0;i<=lines;i++) //for all lines in the file
     {
+        printf("read4 %d\n", i);
         int courseNumber = -1;
         fscanf(queues,"%d ",&courseNumber); //scan the course number
+        printf("read5 %d\n", i);
         int j = 0;
 
         while( sys->courseArr[j]!=NULL&&sys->courseArr[j]->courseNumber!=courseNumber) //check for the coursenum in the courses array once found stop
         {
+            printf("read6 %d %d\n", i, j);
             j++;
         }
+        printf("read7 %d\n", i);
         int numOfIds = numOfElementsInLine(queues);  //check how many ids the course has 
+        printf("read8 %d\n", i);
         char** input=NULL; //initialize the input array
         input = splitLineToArrStrings(queues); //create the array of ids with malloc
+        printf("read9 %d\n", i);
         if(input==NULL) //if the malloc failed destroy the queues that you have added the inputs to
         {
             int k = 0;
+            printf("read10 %d\n", i);
             while(sys->courseArr[k]!=NULL){ 
+                printf("read11 %d %d\n", i, k);
                 IsraeliQueueDestroy(sys->courseArr[k]->queue); 
                 return NULL;
             }
         }
         int l=0; //indexes for the next iterations
-       
+        printf("read12 %d\n", i);
         while(l<numOfIds) //search for the ids in the student arr, and when you find them add the, using enqueue
         {
+            printf("read13 %d %d\n", i, l);
             int m =0; //indexes for the next iterations
             while(strcmp(input[l],sys->studentArr[m]->id)!=0)
             {
                 m++;
-            }   
+                printf("read14 %d %d %d %s %s\n", i, l, m, input[l], sys->studentArr[m]->id);
+            }
+            printf("read15 %d %d\n", i, l);
             if(IsraeliQueueEnqueue(sys->courseArr[j]->queue,(void*)sys->studentArr[m])!=ISRAELIQUEUE_SUCCESS) //if malloc not succeeded delete
             {
+                printf("read16 %d %d\n", i, l);
                 int k = 0;
                 while(sys->courseArr[k]!=NULL)
-                {              
+                {
+                    printf("read17 %d %d %d\n", i, l, k);
                     IsraeliQueueDestroy(sys->courseArr[k]->queue);
+                    printf("read18 %d %d %d\n", i, l, k);
                     return NULL;
                 }
+                printf("read19 %d %d\n", i, l);
                 free(input);
             }
             l++;
         }
    }
+   printf("read20\n");
    return sys;
 }
 
@@ -157,7 +174,7 @@ studentPtr* inputStudentFile(FILE* f,hackerPtr* hackerArr)
         StudentArr[i]=(studentPtr)malloc(sizeof(Student)); 
         if(StudentArr[i]==NULL) //if malloc didnt succeed delete all the mallocs created
         {
-            destroyArr((void**)StudentArr,destroyStudent);
+            //destroyArr((void**)StudentArr,destroyStudent);
             return NULL;
         }
         fscanf(f,"%10s %d %lf ",StudentArr[i]->id,&StudentArr[i]->totalCredits,&StudentArr[i]->gpa); //scan the data you can with fscanf
@@ -166,7 +183,7 @@ studentPtr* inputStudentFile(FILE* f,hackerPtr* hackerArr)
         if(fgets(buffer,restOfLineLength,f)==NULL)
         { 
             printf("error in fgets");
-            destroyArr((void**)StudentArr,destroyStudent);
+            //destroyArr((void**)StudentArr,destroyStudent);
             return NULL;
         }
         StudentArr[i]->name = strtok(buffer," "); //print the rest of the line to each buffer in their order in the file
@@ -175,7 +192,7 @@ studentPtr* inputStudentFile(FILE* f,hackerPtr* hackerArr)
         StudentArr[i]->department = strtok(NULL,"\n"); //end of line so the delimeter is the end
         if(StudentArr[i]->city==NULL||StudentArr[i]->name==NULL||StudentArr[i]->surName==NULL||StudentArr[i]->department==NULL)
         { //if one of the params is baad delete all the allocated memory
-            destroyArr((void**)StudentArr,destroyStudent);
+            //destroyArr((void**)StudentArr,destroyStudent);
             return NULL;
         }       
         int j =0;
@@ -201,23 +218,23 @@ coursePtr* inputCourseFile(FILE* f)
     {
         return NULL;
     }
-    for(int i= 0;i<=numOflines;i++) //loop through all the lines of the file to input the data into the course array
+    for(int i= 0;i<numOflines;i++) //loop through all the lines of the file to input the data into the course array
     {
         courseArr[i]= (coursePtr)malloc(sizeof(Course)); //create each student
         if(courseArr[i]==NULL) //if malloc fails delete all previously created students
         {
-            destroyArr((void*)courseArr,destroyCourse);
+            //destroyArr((void*)courseArr,destroyCourse);
             return NULL;
         }
         fscanf(f,"%d %d\n",&courseArr[i]->courseNumber,&courseArr[i]->courseSize); //scan the static data into the struct
-        courseArr[i]->queue = IsraeliQueueCreate(NULL,NULL,FRIENDSHIP_TH,ENEMY_TH); //create the israeliQueue
-        
-        bool flag = IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueById)!=ISRAELIQUEUE_SUCCESS;
-        flag &= IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueByHackerFile)!=ISRAELIQUEUE_SUCCESS;
-        flag &= IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueByASCII)!=ISRAELIQUEUE_SUCCESS;
+        FriendshipFunction functions[2] = {friendshipValueByHackerFile, NULL};
+        courseArr[i]->queue = IsraeliQueueCreate(functions,NULL,FRIENDSHIP_TH,ENEMY_TH); //create the israeliQueue
+        bool flag = IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueById)==ISRAELIQUEUE_SUCCESS;
+        //flag &= IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueByHackerFile)!=ISRAELIQUEUE_SUCCESS;
+        flag &= IsraeliQueueAddFriendshipMeasure(courseArr[i]->queue,friendshipValueByASCII)==ISRAELIQUEUE_SUCCESS;
         if(!flag) //add the wanted frienship functions if error then malloc failed and delete the whole data struct
         {
-            destroyArr((void**)courseArr,destroyCourse);
+            //destroyArr((void**)courseArr,destroyCourse);
             return NULL;
         }
     }
@@ -237,11 +254,11 @@ hackerPtr* inputHackerFile(FILE *f)
     {
         return NULL;
     }
-    for(int i=0;i<numOfLines;i++) //iterating and creating the structs and putting them inside the array
+    for(int i=0;i<numOfLines/4;i++) //iterating and creating the structs and putting them inside the array
     {
         hackerArr[i]= (hackerPtr)malloc(sizeof(Hacker));
         if(hackerArr[i] == NULL){
-            destroyArr((void**)hackerArr,destroyHacker);
+            //destroyArr((void**)hackerArr,destroyHacker);
             return NULL;
         }
         
@@ -266,7 +283,7 @@ int lineLength(FILE *f)
     int i=0;
     long position = ftell(f); //saving the initial position of the file pointer
     char c;
-    while((c =fgetc(f))!='\n'||c!=EOF) //while we are still int the line 
+    while((c =fgetc(f))!='\n'&& c!=EOF) //while we are still int the line 
     {
         i++;
     }
@@ -279,7 +296,7 @@ int numOfElementsInLine(FILE *f)
     int i=0;
     long position = ftell(f); //saving the initial position of the file pointer
     char c;
-    while((c =fgetc(f))!='\n'||c!=EOF) //while not at the end of the line or the end of the file
+    while((c = fgetc(f)) !='\n'&&c!=EOF) //while not at the end of the line or the end of the file
     {
     if(c==' ') // counting is space is encountered
     {
