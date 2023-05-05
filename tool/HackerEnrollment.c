@@ -40,6 +40,18 @@ void destroyHacker(void* temp)
     }
 }
 
+void destroyEnrollmentSystem(void* temp)
+{
+    EnrollmentSystem sys =(EnrollmentSystem)temp;
+    if(sys!=NULL)
+    {
+       destroyArr((void**)sys->hackerArr,destroyHacker);
+       destroyArr((void**)sys->studentArr,destroyStudent);
+       destroyArr((void**)sys->courseArr,destroyCourse);
+        free(sys);
+    }
+}
+
 EnrollmentSystem createEnrollment(FILE* students, FILE* courses,FILE* hackers)
 {
     if(students==NULL||courses==NULL||hackers==NULL) //if one is null then there is a problem
@@ -57,10 +69,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses,FILE* hackers)
 
     if(sys->hackerArr==NULL||sys->courseArr==NULL||sys->studentArr==NULL) //if malloc didnt succeed free so no memory leak
     {
-        destroyArr((void**)sys->hackerArr,destroyHacker);
-        destroyArr((void**)sys->courseArr,destroyCourse);
-        destroyArr((void**)sys->studentArr,destroyStudent);
-        free(sys);
+        destroyEnrollmentSystem(sys);
         return NULL;
     }
     return sys;
