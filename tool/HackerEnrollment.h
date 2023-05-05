@@ -1,5 +1,5 @@
 #ifndef PROVIDED_ISRAELIQUEUE_H
- #include "IsraeliQueue.h" //need to change to the place where this is actually at when finsihed
+ #include "../IsraeliQueue.h" //need to change to the place where this is actually at when finsihed
 #endif
 
 #include <stdio.h>

@@ -485,4 +485,3 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out) //need to iterate here over
         c=fgetc(readTemp);
     }
 }
-
