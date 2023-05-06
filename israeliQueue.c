@@ -31,7 +31,7 @@ struct IsraeliQueue_t
 {
   personPtr head, tail;
   funcNodePtr funcList;
-  ComparisonFunction compare;
+  ComparisonFunction compareFunc;
   int friendship_th;
   int rivalry_th;
 }IsraeliQueue_t;
@@ -40,7 +40,7 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction* friendFunctions, ComparisonF
   IsraeliQueue queue = (IsraeliQueue)malloc(sizeof(IsraeliQueue_t)); //i think the size allocation here needs to be that of the struct itslef
   //queue->friendshipFunctions = friendFunctions;
   //our pointers inside the israeliqueue are not pointing to anything which is unddefined beahvior maybe we need to change this
-  queue->compare = compFunction;
+  queue->compareFunc = compFunction;
   queue->friendship_th = friendThres;
   queue->rivalry_th = rivalTres;
   queue->head=NULL; //so that there are no errors
@@ -69,7 +69,7 @@ IsraeliQueue IsraeliQueueClone(IsraeliQueue q)
   IsraeliQueue clone = (IsraeliQueue)malloc(sizeof(IsraeliQueue_t)); 
   clone->rivalry_th=q->rivalry_th;
   clone->friendship_th=q->friendship_th;
-  clone->compare=q->compare;
+  clone->compareFunc=q->compareFunc;
   clone->head= copyPersonQueue(q->head);
   clone->funcList=copyFunc(q->funcList);
    return clone;
@@ -110,7 +110,6 @@ void IsraeliQueueDestroy(IsraeliQueue queue){
   {
     personPtr temp = p;
     p = p->next;
-    free(temp->person);
     free(temp);
   }
   destroyFuncList(queue->funcList);
@@ -147,9 +146,14 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need 
   if(!newPerson){
     return ISRAELIQUEUE_ALLOC_FAILED;
   }
+  if(queue->head == NULL){
+    queue->head = newPerson;
+    newPerson->next = NULL;
+    newPerson->previous = NULL;
+    return ISRAELIQUEUE_SUCCESS;
+  }
   personPtr tmpPerson = queue->head;
   personPtr friend = NULL;
-
   while(tmpPerson->next!=NULL){
     if(friend==NULL) //if there is no current friend check if current node is friend that i can pass
     {
@@ -231,7 +235,7 @@ bool IsraeliQueueContains(IsraeliQueue queue, void * person)
   personPtr temp = queue->head;
    
   while(temp!=NULL){
-    if(temp->person==person){
+    if((queue->compareFunc)(temp->person, person)){
       return true;
     }
     temp=temp->next;
@@ -244,14 +248,16 @@ void* IsraeliQueueDequeue(IsraeliQueue queue)
   if(queue == NULL || queue->head==NULL){
     return NULL;
   }
-  personPtr first = queue->head;
-  queue->head=queue->head->next;
+  personPtr temp = queue->head;
+  void* data = temp->person;
+  queue->head=temp->next;
   if(queue->head == NULL){
     queue->tail = NULL;
   }else{
-  queue->head->previous = NULL;
+    queue->head->previous = NULL;
   }
-  return first;
+  free(temp);
+  return data;
 }
 
 IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue queue, FriendshipFunction newFunc)// need to add checks that the function works correctly
@@ -341,7 +347,7 @@ IsraeliQueue IsraeliQueueMerge(IsraeliQueue* qarr,ComparisonFunction func){
     destroyFuncList(newFuncList);
     return NULL;
   }
-  newQueue->compare = func;
+  newQueue->compareFunc = func;
   newQueue->friendship_th = newFThreshold / qarr_size;
   newQueue->rivalry_th = (int)(ceil(pow(newRThreshold, 1.0/qarr_size)));
   newQueue->funcList = newFuncList;

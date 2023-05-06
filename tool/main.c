@@ -42,9 +42,13 @@ int main(int argc, char** argv){
             fclose(courses);
             return 0;
         }
-        bool ignoreBigLetters = argc == 7 && !strcmp(argv[1], "-i");
+        EnrollmentSystem sys = createEnrollment(students, courses, hackers);
+        EnrollmentSystem flag = readEnrollment(sys, queues);
+        hackEnrollment(flag, target);
+        destroySystem(sys);
+        //bool ignoreBigLetters = argc == 7 && !strcmp(argv[1], "-i");
         //ignoreBigLetters needs to be added to the enrollment system
-        EnrollmentSystem system = createEnrollment(students, courses, hackers);
+        /*EnrollmentSystem system = createEnrollment(students, courses, hackers);
         printf("main1\n");
         if(system != NULL){
             if(ignoreBigLetters){
@@ -66,7 +70,7 @@ int main(int argc, char** argv){
         }
         else{
             printf("could not produce the enrollment system!\n");
-        }
+        }*/
         fclose(target);
         fclose(queues);
         fclose(hackers);
