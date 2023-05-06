@@ -155,12 +155,7 @@ struct Course* createCourse(char* info){
     course->queue = IsraeliQueueCreate(functions, compareStudents, FRIENDSHIP_TH, ENEMY_TH);
     course->courseNum = getWord(info);
     char* size = getWord(info);
-    int tmpSize = 0;
-    for(int i = 0 ; size[i] != '\0' ; i++){
-        tmpSize *= 10;
-        tmpSize += size[i] - '0';
-    }
-    course->size = tmpSize;
+    course->size = atoi(size);
     free(size);
     return course;
 }
@@ -282,10 +277,12 @@ int posInQueue(IsraeliQueue queue, void* item){
         void* tempItem = IsraeliQueueDequeue(tempQueue);
         if(compareStudents(item, tempItem)){
             IsraeliQueueDequeue(tempQueue);
+            IsraeliQueueDestroy(tempQueue);
             return pos;
         }
         pos++;
     }
+    IsraeliQueueDestroy(tempQueue);
     return -1;
 }
 
@@ -389,8 +386,8 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues){
         if(line == NULL) return NULL;
         char* courseNum = getWord(line);
         struct Course* course = findCourse(sys->coursesList, courseNum);
+        free(courseNum);
         if(course == NULL){
-            free(courseNum);
             free(line);
             return NULL;
         }
@@ -399,7 +396,6 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues){
             struct Student* student = findStudent(sys->studentsList, studentID);
             if(student == NULL){
                 free(studentID);
-                free(courseNum);
                 free(line);
                 return NULL;
             }
@@ -407,7 +403,6 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues){
                 IsraeliQueueEnqueue(course->queue, student);
             }
             free(studentID);
-            free(courseNum);
             studentID = getWord(line);
         }
         free(line);
@@ -430,12 +425,12 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out){
     }
     iterator = sys->hackers;
     while(iterator != NULL){
-        struct Node* desiredCourses = ((struct Student*)iterator->data)->hackerInfo->desiredCourses;
+        struct Student* tmp = (struct Student*)iterator->data;
+        struct Node* desiredCourses = tmp->hackerInfo->desiredCourses;
         int acceptedCount = 0;
         int rejectedCount = 0;
         while(desiredCourses != NULL){
-            struct Course* course = (struct Course*)desiredCourses->data;
-            void* tmp = iterator->data;
+            struct Course* course = findCourse(sys->coursesList, (char*)desiredCourses->data);
             int pos = posInQueue(course->queue, tmp);
             int size = course->size;
             if(pos < size) acceptedCount++;

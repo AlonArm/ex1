@@ -72,13 +72,12 @@ IsraeliQueue IsraeliQueueClone(IsraeliQueue q)
   clone->compareFunc=q->compareFunc;
   clone->head= copyPersonQueue(q->head);
   clone->funcList=copyFunc(q->funcList);
-   return clone;
+  return clone;
 }
 
 funcNodePtr copyFunc(funcNodePtr head) //helper function for cloning linked list of func
 { //this is an addition to the api
-  if(head==NULL)
-  {
+  if(head==NULL){
     return NULL;
   }
      funcNodePtr newNode= (funcNodePtr)malloc(sizeof(struct funcNode));
