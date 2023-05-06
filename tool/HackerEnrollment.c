@@ -96,7 +96,8 @@ char* readLine(FILE* file){
         counter++;
     }while(c != '\n' && c != EOF);
     fseek(file, pos, SEEK_SET);
-    char* line = (char*)malloc(sizeof(char) * counter);
+    char* line = (char*)malloc(sizeof(char) * (counter + 1));
+    if(line == NULL) return NULL;
     char* temp = fgets(line, counter + 1, file);
     if(temp == NULL){
         free(line);
@@ -106,13 +107,14 @@ char* readLine(FILE* file){
     return line;
 }
 char* getWord(char* line){
-    if(line == NULL) return NULL;
+    if(line == NULL || line[0] == '\0') return NULL;
     int i = 0;
     while(line[i] != '\0' && line[i] != ' ') i++;
     if(i == 0) return NULL;
     line[i] = '\0';
-    char* newWord = (char*)malloc(i * sizeof(char));
-    strcpy(newWord, line);
+    char* newWord = (char*)malloc((i + 1) * sizeof(char));
+    if(newWord == NULL) return NULL;
+    for(int j = 0 ; j <= i ; j++) newWord[j] = line[j];
     int j = 0;
     while(line[j + i + 1] != '\0'){
         line[j] = line[j + i + 1];
@@ -153,13 +155,21 @@ struct Course* createCourse(char* info){
     course->queue = IsraeliQueueCreate(functions, compareStudents, FRIENDSHIP_TH, ENEMY_TH);
     course->courseNum = getWord(info);
     char* size = getWord(info);
-    course->size = atoi(size);
+    int tmpSize = 0;
+    for(int i = 0 ; size[i] != '\0' ; i++){
+        tmpSize *= 10;
+        tmpSize += size[i] - '0';
+    }
+    course->size = tmpSize;
     free(size);
     return course;
 }
 struct Hacker* createHacker(char* courses, char* friends, char* rivals){
     struct Hacker* hacker = (struct Hacker*)malloc(sizeof(struct Hacker));
     if(hacker == NULL) return NULL;
+    hacker->desiredCourses = NULL;
+    hacker->friends = NULL;
+    hacker->rivals = NULL;
     char* tempWord = getWord(courses);
     while(tempWord != NULL){
         struct Node* addedCourse = (struct Node*)malloc(sizeof(struct Node));
@@ -228,6 +238,7 @@ void destroyHacker(void* hacker){
     destroyList(hr->desiredCourses, free);
     destroyList(hr->friends, free);
     destroyList(hr->rivals, free);
+    free(hacker);
 }
 void destroyList(struct Node* list, void(*destroyFunc)(void*)){
     if(list == NULL) return;
@@ -248,6 +259,21 @@ void destroySystem(EnrollmentSystem sys){
     free(sys);
 }
 
+void changeBigLetters(EnrollmentSystem sys){
+    if(sys == NULL) return;
+    struct Node* iterator = sys->studentsList;
+    while(iterator != NULL){
+        char* name = ((struct Student*)iterator->data)->name;
+        for(int i = 0 ; name[i] != '\0' ; i++){
+            if(name[i] >= 'A' && name[i] <= 'Z') name[i] += 'a'-'A';
+        }
+        char* surname = ((struct Student*)iterator->data)->surName;
+        for(int i = 0 ; surname[i] != '\0' ; i++){
+            if(surname[i] >= 'A' && surname[i] <= 'Z') surname[i] += 'a' - 'A';
+        }
+        iterator = iterator->next;
+    }
+}
 int posInQueue(IsraeliQueue queue, void* item){
     if(queue == NULL || item == NULL) return -1;
     IsraeliQueue tempQueue = IsraeliQueueClone(queue);
@@ -281,6 +307,9 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers){
     if(students == NULL || courses == NULL || hackers == NULL) return NULL;
     EnrollmentSystem system = (EnrollmentSystem)malloc(sizeof(struct EnrollmentSystem_t));
     if(system == NULL) return NULL;
+    system->coursesList = NULL;
+    system->hackers = NULL;
+    system->studentsList = NULL;
     while(!isEmpty(students)){
         char* line = readLine(students);
         struct Student* newStudent = createStudent(line);
@@ -378,8 +407,10 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues){
                 IsraeliQueueEnqueue(course->queue, student);
             }
             free(studentID);
+            free(courseNum);
             studentID = getWord(line);
         }
+        free(line);
     }
     return sys;
 }
@@ -404,7 +435,10 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out){
         int rejectedCount = 0;
         while(desiredCourses != NULL){
             struct Course* course = (struct Course*)desiredCourses->data;
-            if(posInQueue(course->queue, iterator->data) < course->size) acceptedCount++;
+            void* tmp = iterator->data;
+            int pos = posInQueue(course->queue, tmp);
+            int size = course->size;
+            if(pos < size) acceptedCount++;
             else rejectedCount++;
             desiredCourses = desiredCourses->next;
         }
