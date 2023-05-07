@@ -37,9 +37,11 @@ struct IsraeliQueue_t
 }IsraeliQueue_t;
 
 IsraeliQueue IsraeliQueueCreate(FriendshipFunction* friendFunctions, ComparisonFunction compFunction, int friendThres, int rivalTres){
-  IsraeliQueue queue = (IsraeliQueue)malloc(sizeof(IsraeliQueue_t)); //i think the size allocation here needs to be that of the struct itslef
-  //queue->friendshipFunctions = friendFunctions;
-  //our pointers inside the israeliqueue are not pointing to anything which is unddefined beahvior maybe we need to change this
+  IsraeliQueue queue = (IsraeliQueue)malloc(sizeof(IsraeliQueue_t)); 
+    if(queue==NULL) //checking for NULLITY
+    {
+        return NULL;
+    }
   queue->compareFunc = compFunction;
   queue->friendship_th = friendThres;
   queue->rivalry_th = rivalTres;
@@ -48,11 +50,21 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction* friendFunctions, ComparisonF
   if(friendFunctions != NULL && friendFunctions[0] != NULL)
   {
     queue->funcList = (funcNodePtr)(malloc(sizeof(struct funcNode)));
+    if(queue->funcList==NULL) //freeing unused data if malloc fails
+    {
+        IsraeliQueueDestroy(queue);
+        return NULL;
+    }
     queue->funcList->func = friendFunctions[0];
     funcNodePtr temp = queue->funcList;
     for(int i = 1 ; friendFunctions[i] != NULL ; i++)
     {
       temp->next = (funcNodePtr)(malloc(sizeof(struct funcNode)));
+      if(temp->next==NULL) //freeing unused data if malloc fails
+      {
+          IsraeliQueueDestroy(queue);
+          return NULL;
+      }
       temp->next->func = friendFunctions[i];
       temp = temp->next;
     }
@@ -67,6 +79,10 @@ IsraeliQueue IsraeliQueueClone(IsraeliQueue q)
     return NULL;
   }
   IsraeliQueue clone = (IsraeliQueue)malloc(sizeof(IsraeliQueue_t)); 
+  if(clone==NULL)
+  {
+      return NULL;
+  }
   clone->rivalry_th=q->rivalry_th;
   clone->friendship_th=q->friendship_th;
   clone->compareFunc=q->compareFunc;
@@ -81,6 +97,10 @@ funcNodePtr copyFunc(funcNodePtr head) //helper function for cloning linked list
     return NULL;
   }
      funcNodePtr newNode= (funcNodePtr)malloc(sizeof(struct funcNode));
+     if(newNode==NULL)
+     {
+         return NULL;
+     }
      newNode->func = head->func;
      newNode->next = copyFunc(head->next);
      return newNode;
@@ -93,6 +113,10 @@ personPtr copyPersonQueue(personPtr head) //helper function for cloning queue of
     return NULL;
   }
     personPtr person= (personPtr)malloc(sizeof(struct personQueue));
+    if(person=NULL)
+    {
+        return NULL;
+    }
     person->enemyHeldBack = head->enemyHeldBack;
     person->friendsPassed= head->friendsPassed;
     person->person = head->person;
@@ -139,6 +163,10 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need 
     return ISRAELIQUEUE_BAD_PARAM;
   }
   personPtr newPerson = (personPtr)malloc(sizeof(struct personQueue));
+  if(newPerson==NULL)
+  {
+      return ISRAELIQUEUE_ALLOC_FAILED;
+  }
   newPerson->person = person;
   newPerson->enemyHeldBack = 0;
   newPerson->friendsPassed = 0;
@@ -290,7 +318,9 @@ IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue queue, Friendshi
 }
 
 IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue queue){
-  if(queue == NULL) return ISRAELIQUEUE_BAD_PARAM;
+  if(queue == NULL) {
+      return ISRAELIQUEUE_BAD_PARAM;
+  }
   personPtr advancingPerson = queue->tail;
   while(advancingPerson != queue->head){
     personPtr iterator = queue->head;
@@ -299,7 +329,8 @@ IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue queue){
       int compareResult = compare(queue, iterator->person, advancingPerson->person);
       if(friend == NULL && compareResult == 1 && iterator->friendsPassed < FRIEND_QUOTA){
         friend = iterator;
-      }else if(friend != NULL && compareResult == -1 && iterator->enemyHeldBack < RIVAL_QUOTA){
+      }
+      else if(friend != NULL && compareResult == -1 && iterator->enemyHeldBack < RIVAL_QUOTA){
         friend = NULL;
         iterator->enemyHeldBack++;
       }
@@ -323,7 +354,9 @@ IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue queue){
 }
 
 IsraeliQueue IsraeliQueueMerge(IsraeliQueue* qarr,ComparisonFunction func){
-  if(qarr == NULL || qarr[0] == NULL || func == NULL) return NULL;
+  if(qarr == NULL || qarr[0] == NULL || func == NULL){
+      return NULL;
+  }
   int newFThreshold = 0;
   int newRThreshold = 1;
   int qarr_size = 0;
@@ -335,6 +368,10 @@ IsraeliQueue IsraeliQueueMerge(IsraeliQueue* qarr,ComparisonFunction func){
     funcNodePtr temp = qarr[i]->funcList;
     while(temp != NULL){
       funcNodePtr addedFunc = (funcNodePtr)malloc(sizeof(struct funcNode));
+      if(addedFunc==NULL)
+      {
+          return NULL;
+      }
       addedFunc->func = temp->func;
       addedFunc->next = newFuncList;
       newFuncList = addedFunc;
