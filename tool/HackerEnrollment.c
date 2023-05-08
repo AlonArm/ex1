@@ -32,11 +32,10 @@ int friendsByHackerFile(void* hacker, void* student){
         return 0;
     }
     struct Student* hr = (struct Student*)hacker;
-    if(hr->hackerInfo == NULL){ 
+    char* studentID = ((struct Student*)student)->ID;
+    if(hr->hackerInfo == NULL){
         return 0;
     }
-    char* studentID = ((struct Student*)student)->ID;
-    
     Node* temp = hr->hackerInfo->friends;
     while(temp != NULL){
         if(strcmp((char*)(temp->data), studentID) == 0){
@@ -58,10 +57,10 @@ int friendsByName(void* hr, void* st){
         return 0;
     }
     struct Student* hacker = (struct Student*)hr;
+    struct Student* student = (struct Student*)st;
     if(hacker->hackerInfo == NULL){ 
         return 0;
     }
-    struct Student* student = (struct Student*)st;
     return nameDiff(hacker->name, student->name)+nameDiff(hacker->surName, student->surName);
 }
 int nameDiff(char* name1, char* name2){
@@ -72,9 +71,9 @@ int nameDiff(char* name1, char* name2){
             sum += name1[i] - name2[i];
         }
         else{
-             sum += name2[i] - name1[i];
-            i++;
+            sum += name2[i] - name1[i];
         }
+        i++;
     }
     char* name = (name1[i] != '\0') ? name1 : name2;
     while(name[i] != '\0'){
@@ -122,6 +121,7 @@ char* readLine(FILE* file){
         return NULL;
     }
     line[counter - 1] = '\0';
+    line[counter] = '\0';
     return line;
 }
 char* getWord(char* line){
@@ -297,9 +297,11 @@ void destroyNodes(void* node){
     free(node);
 }
 void destroySystem(EnrollmentSystem sys){
-    destroyList(sys->studentsList, destroyStudent);
-    destroyList(sys->coursesList, destroyCourse);
-    destroyNodes(sys->hackers);
+    if(sys != NULL){
+        destroyList(sys->studentsList, destroyStudent);
+        destroyList(sys->coursesList, destroyCourse);
+        destroyNodes(sys->hackers);
+    }
     free(sys);
 }
 
@@ -538,5 +540,19 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out){
             fprintf(out, "\n");
         }
         iterator = iterator->next;
+    }
+}
+void changeBigLetters(EnrollmentSystem sys){
+    if(sys == NULL) return;
+    struct Node* temp = sys->studentsList;
+    while(temp != NULL){
+        struct Student* st = (struct Student*)temp->data;
+        for(int i = 0 ; st->name[i] != '\0' ; i++){
+            if(st->name[i] >= 'A' && st->name[i] <= 'Z') st->name[i] += 'a' - 'A';
+        }
+        for(int i = 0 ; st->surName[i] != '\0' ; i++){
+            if(st->surName[i] >= 'A' && st->surName[i] <= 'Z') st->name[i] += 'a' - 'A';
+        }
+        temp = temp->next;
     }
 }

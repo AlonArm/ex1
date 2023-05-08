@@ -53,16 +53,6 @@ typedef struct EnrollmentSystem_t
     struct Node* hackers;
 }EnrollmentSystem_t;
 
-
-/**
- * OVERVIEW ON THE printSystem BELOW-
- * prints all the data concerning an enrollment system struct
- * 
- * PARAMETERS PASSED-
- * 1.EnrollmentSystem sys
-*/
-void printSystem(EnrollmentSystem);
-
 /**
  * OVERVIEW ON THE destroySystem BELOW-
  * deletes all the data inside a system
@@ -110,4 +100,5 @@ EnrollmentSystem readEnrollment(EnrollmentSystem, FILE*);
  * 2. FILE* out: file that consists of "Cannot satisfy constraints for <Student ID>+" 
  */
 void hackEnrollment(EnrollmentSystem, FILE*);
+void changeBigLetters(EnrollmentSystem sys);
 #endif

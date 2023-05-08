@@ -44,33 +44,15 @@ int main(int argc, char** argv){
         }
         EnrollmentSystem sys = createEnrollment(students, courses, hackers);
         EnrollmentSystem flag = readEnrollment(sys, queues);
-        hackEnrollment(flag, target);
-        destroySystem(sys);
-        //bool ignoreBigLetters = argc == 7 && !strcmp(argv[1], "-i");
-        //ignoreBigLetters needs to be added to the enrollment system
-        /*EnrollmentSystem system = createEnrollment(students, courses, hackers);
-        printf("main1\n");
-        if(system != NULL){
-            if(ignoreBigLetters){
-                printf("main2\n");
-                changeCapitalLetters(system);
-            }
-            printf("main3\n");
-            EnrollmentSystem queuedSystem = readEnrollment(system, queues);
-            printf("main4\n");
-            if(queuedSystem != NULL){
-                hackEnrollment(queuedSystem, target);
-                printf("Enrollment system was changed successfully");
-                destroyEnrollmentSystem(queuedSystem);
-            }
-            else{
-                printf("could not produce the queued system!\n");
-            }
-            destroyEnrollmentSystem(system);
+        if(flag != NULL){
+            bool ignoreBigLetters = argc == 7 && !strcmp(argv[1], "-i");
+            if(ignoreBigLetters) changeBigLetters(sys);
+            hackEnrollment(sys, target);
         }
         else{
-            printf("could not produce the enrollment system!\n");
-        }*/
+            printf("could not read enrollment queues!\n");
+        }
+        destroySystem(sys);
         fclose(target);
         fclose(queues);
         fclose(hackers);

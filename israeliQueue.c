@@ -66,6 +66,7 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction* friendFunctions, ComparisonF
           return NULL;
       }
       temp->next->func = friendFunctions[i];
+      temp->next->next = NULL;
       temp = temp->next;
     }
   }
@@ -175,6 +176,7 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need 
   }
   if(queue->head == NULL){
     queue->head = newPerson;
+    queue->tail = newPerson;
     newPerson->next = NULL;
     newPerson->previous = NULL;
     return ISRAELIQUEUE_SUCCESS;
@@ -184,15 +186,15 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need 
   while(tmpPerson->next!=NULL){
     if(friend==NULL) //if there is no current friend check if current node is friend that i can pass
     {
-      if(tmpPerson->friendsPassed < FRIEND_QUOTA && compare(queue, tmpPerson->person, person) == 1){
+      if(tmpPerson->friendsPassed < FRIEND_QUOTA && compare(queue, person, tmpPerson->person) == 1){
         friend = tmpPerson;
       }
     }
     else //check if there is an enemy behind
     {
-      if(tmpPerson->enemyHeldBack < RIVAL_QUOTA && compare(queue, tmpPerson->person, person) == -1){
+      if(tmpPerson->enemyHeldBack < RIVAL_QUOTA && compare(queue, person, tmpPerson->person) == -1){
         friend = NULL;
-        tmpPerson->enemyHeldBack++;
+        tmpPerson->enemyHeldBack = tmpPerson->enemyHeldBack + 1;
       }
     }
     tmpPerson= tmpPerson->next;
@@ -200,15 +202,18 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue queue, void * person) //need 
   newPerson->previous = tmpPerson;
   if(friend == NULL){
     newPerson->next = NULL;
+    newPerson->previous = tmpPerson;
     tmpPerson->next = newPerson;
     queue->tail = newPerson;
   }
   else{
-    newPerson->next = tmpPerson->next;
-    tmpPerson->next = newPerson;
-    tmpPerson->friendsPassed++;
+    newPerson->next = friend->next;
+    newPerson->next->previous = newPerson;
+    newPerson->previous = friend;
+    friend->next = newPerson;
+    friend->friendsPassed++;
   }
-return ISRAELIQUEUE_SUCCESS;
+  return ISRAELIQUEUE_SUCCESS;
 }
 //receives two objects in the queue and checks if they are friends or enemies
 //returns -1 if they are enemies, 1 if they are friends, 0 if neither
@@ -218,11 +223,13 @@ int compare(IsraeliQueue queue, void* person1, void* person2){
   }
   funcNodePtr temp = queue->funcList;
   int fCounter = 0;
+  int i = 0;
   while(temp != NULL){
     int fLevel = (*(temp->func))(person1, person2);
-    if(fLevel > queue->friendship_th) return 1;
+    if(fLevel >= queue->friendship_th) return 1;
     fCounter += fLevel;
     temp = temp->next;
+    i++;
   }
   if(fCounter < queue->rivalry_th * FuncListSize(queue->funcList)) return -1;
   return 0;
@@ -322,11 +329,14 @@ IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue queue){
       return ISRAELIQUEUE_BAD_PARAM;
   }
   personPtr advancingPerson = queue->tail;
+  int i = 0;
   while(advancingPerson != queue->head){
     personPtr iterator = queue->head;
     personPtr friend = NULL;
+    int j = 0;
     while(iterator != advancingPerson){
-      int compareResult = compare(queue, iterator->person, advancingPerson->person);
+      j++;
+      int compareResult = compare(queue, advancingPerson->person, iterator->person);
       if(friend == NULL && compareResult == 1 && iterator->friendsPassed < FRIEND_QUOTA){
         friend = iterator;
       }
@@ -349,6 +359,7 @@ IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue queue){
     else{
       advancingPerson = advancingPerson->previous;
     }
+    i++;
   }
   return ISRAELIQUEUE_SUCCESS;
 }
