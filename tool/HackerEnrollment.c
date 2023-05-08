@@ -399,8 +399,13 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers){
             return NULL;
         }
         temp->data = newCourse;
-        temp->next = system->coursesList;
-        system->coursesList = temp;
+        temp->next = NULL;
+        struct Node* last = system->coursesList;
+        if(last == NULL)system->coursesList = temp;
+        else{
+            while(last->next != NULL) last = last->next;
+            last->next = temp;
+        }
     }
     while(!isEmpty(hackers)){
         char* idLine = readLine(hackers);
@@ -533,53 +538,5 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out){
             fprintf(out, "\n");
         }
         iterator = iterator->next;
-    }
-}
-
-void printSystem(EnrollmentSystem sys){
-    if(sys == NULL){
-        printf("NULL\n");
-        return;
-    }
-    printf("courses:\n");
-    struct Node* temp = sys->coursesList;
-    while(temp != NULL){
-        struct Course* course = (struct Course*)(temp->data);
-        printf("course number: %s, course size %d\n", course->courseNum, course->size);
-        temp = temp->next;
-    }
-    printf("\nstudents:\n");
-    temp = sys->studentsList;
-    while(temp != NULL){
-        struct Student* student = (struct Student*)(temp->data);
-        printf("ID: %s, credits: %s, GPA: %s, name: %s, surname: %s, city: %s, department: %s\n",
-        student->ID, student->totalCredits, student->GPA, student ->name,
-        student->surName, student->city, student->department);
-        struct Hacker* hackerInfo = student->hackerInfo;
-        if(hackerInfo == NULL) {
-            printf("not a hacker\n");
-        }
-        else{
-            printf("desired courses: ");
-            struct Node* temp1 = hackerInfo->desiredCourses;
-            while(temp1 != NULL){
-                printf("%s, ", (char*)(temp1->data));
-                temp1 = temp1->next;
-            }
-            printf("\nfriends: ");
-            temp1 = hackerInfo->friends;
-            while(temp1 != NULL){
-                printf("%s, ", (char*)(temp1->data));
-                temp1 = temp1->next;
-            }
-            printf("\nrivals: ");
-            temp1 = hackerInfo->rivals;
-            while(temp1 != NULL){
-                printf("%s, ", (char*)(temp1->data));
-                temp1 = temp1->next;
-            }
-            printf("\n");
-        }
-        temp = temp->next;
     }
 }

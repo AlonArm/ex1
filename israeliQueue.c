@@ -113,7 +113,7 @@ personPtr copyPersonQueue(personPtr head) //helper function for cloning queue of
     return NULL;
   }
     personPtr person= (personPtr)malloc(sizeof(struct personQueue));
-    if(person=NULL)
+    if(person==NULL)
     {
         return NULL;
     }
